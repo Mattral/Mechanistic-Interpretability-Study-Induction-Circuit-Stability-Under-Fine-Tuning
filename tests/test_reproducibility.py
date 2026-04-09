@@ -57,3 +57,47 @@ def test_checkpoint_required_metadata(small_model):
         save_checkpoint(ckpt, 100, small_model, opt, 1.23, dummy_scores, TrainConfig(), 42)
         payload = torch.load(ckpt, map_location="cpu")
     assert not (required - set(payload.keys()))
+
+
+def test_training_determinism(small_model: transformer_lens.HookedTransformer) -> None:
+    """Two training runs with the same seed must produce identical loss curves.
+
+    Runs 10 gradient steps from the same starting state with the same seed.
+    Loss at every step must match within floating-point tolerance.
+    This guards against non-deterministic CUDA ops or hidden global state.
+    """
+    import copy
+    from src.model.train import set_global_seed, build_scheduler
+
+    device = "cpu"  # CPU-only for determinism in CI
+
+    def _run_steps(
+        model: transformer_lens.HookedTransformer, n_steps: int, seed: int
+    ) -> list[float]:
+        """Run n_steps gradient updates and return per-step loss values."""
+        set_global_seed(seed)
+        m = copy.deepcopy(model)
+        m.train()
+        m.to(device)
+        opt = torch.optim.AdamW(m.parameters(), lr=2e-5, weight_decay=0.01)
+        sched = build_scheduler(opt, total_steps=n_steps, warmup_steps=1)
+        torch.manual_seed(seed)
+        losses = []
+        for _ in range(n_steps):
+            batch = torch.randint(0, m.cfg.d_vocab, (4, 32))
+            loss = m(batch, return_type="loss")
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            sched.step()
+            losses.append(float(loss))
+        return losses
+
+    losses_a = _run_steps(small_model, n_steps=5, seed=42)
+    losses_b = _run_steps(small_model, n_steps=5, seed=42)
+
+    for i, (a, b) in enumerate(zip(losses_a, losses_b)):
+        assert abs(a - b) < 1e-5, (
+            f"Training is not deterministic at step {i}: loss_a={a:.6f}, loss_b={b:.6f}. "
+            "Check that set_global_seed() correctly seeds all RNGs."
+        )

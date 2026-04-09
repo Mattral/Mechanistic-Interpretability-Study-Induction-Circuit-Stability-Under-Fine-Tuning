@@ -57,3 +57,27 @@ def test_identify_induction_heads(small_model):
         assert len(lh) == 2
         assert 0 <= lh[0] < small_model.cfg.n_layers
         assert 0 <= lh[1] < small_model.cfg.n_heads
+
+
+def test_score_known_non_induction_head(small_model: transformer_lens.HookedTransformer) -> None:
+    """Layer-0 heads (previous-token heads) must score below 0.3.
+
+    In the pretrained attn-only-2l model, layer-0 heads are previous-token
+    heads, not induction heads. Their mean induction score must be below 0.3.
+    This guards against regressions that accidentally make all heads look like
+    induction heads.
+    """
+    from src.circuits.induction_score import compute_induction_score
+
+    scores = compute_induction_score(
+        model=small_model,
+        sequence_length=30,
+        num_sequences=50,
+        seed=42,
+        device="cpu",
+    )
+    layer_0_mean = float(scores[0].mean())
+    assert layer_0_mean < 0.3, (
+        f"Layer-0 mean induction score should be < 0.3 (previous-token heads), "
+        f"got {layer_0_mean:.3f}. Possible regression in induction score computation."
+    )

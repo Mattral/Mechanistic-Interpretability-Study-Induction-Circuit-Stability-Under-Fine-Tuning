@@ -1,5 +1,6 @@
 """Pre-training loop and checkpointing utilities."""
 from __future__ import annotations
+
 import dataclasses
 import datetime
 import logging
@@ -14,13 +15,37 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torch.utils.data import DataLoader
 
-from src.model.config import TrainConfig
+from src.model.config import ModelConfig, TrainConfig
 
 logger = logging.getLogger(__name__)
 
 
+def configure_logging(level: int = logging.INFO) -> None:
+    """Configure root logger with the project-standard format.
+
+    Must be called once at the entry point of any script or notebook that
+    uses this package. Format matches Section 3.6 of AGENT_INSTRUCTIONS.
+
+    Args:
+        level: Logging level (default: logging.INFO).
+    """
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+        force=True,
+    )
+
+
 def set_global_seed(seed: int = 42) -> None:
-    """Set all random seeds for full determinism."""
+    """Set all random seeds for full determinism.
+
+    Must be called at the top of every notebook cell that trains or evaluates
+    a model.
+
+    Args:
+        seed: Integer random seed applied to Python, NumPy, and PyTorch.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -32,13 +57,21 @@ def set_global_seed(seed: int = 42) -> None:
 
 
 def load_pretrained_model(
-    config,
+    config: ModelConfig,
     device: Optional[str] = None,
 ) -> transformer_lens.HookedTransformer:
-    """Load the pretrained attention-only transformer from TransformerLens."""
+    """Load the pretrained attention-only transformer from TransformerLens.
+
+    Args:
+        config: ModelConfig specifying which pretrained model to load.
+        device: Torch device string. Defaults to CUDA if available, else CPU.
+
+    Returns:
+        A HookedTransformer instance ready for inference or fine-tuning.
+    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info("Loading model '%s' on '%s'", config.source, device)
+    logger.info("Loading model '%s' on device '%s'", config.source, device)
     model = transformer_lens.HookedTransformer.from_pretrained(
         config.source,
         center_unembed=True,
@@ -48,7 +81,12 @@ def load_pretrained_model(
     )
     model = model.to(device)
     model.eval()
-    logger.info("Loaded: %dL %dH d_model=%d", model.cfg.n_layers, model.cfg.n_heads, model.cfg.d_model)
+    logger.info(
+        "Model loaded: %dL %dH d_model=%d",
+        model.cfg.n_layers,
+        model.cfg.n_heads,
+        model.cfg.d_model,
+    )
     return model
 
 
@@ -62,7 +100,24 @@ def save_checkpoint(
     config: TrainConfig,
     seed: int,
 ) -> None:
-    """Save a full training checkpoint with provenance metadata."""
+    """Save a full training checkpoint with provenance metadata.
+
+    The checkpoint includes model weights, optimiser state, metrics, and full
+    provenance metadata so results remain reproducible months later.
+
+    Args:
+        path: File path for the checkpoint (.pt).
+        step: Current gradient step number.
+        model: The HookedTransformer instance to save.
+        optimizer: The current optimizer, including its state dict.
+        loss: Most recent training loss scalar.
+        induction_scores: Float tensor [n_layers, n_heads] computed at this step.
+        config: TrainConfig used for this run.
+        seed: The random seed active at checkpoint time.
+
+    Raises:
+        OSError: If the checkpoint directory cannot be created or written to.
+    """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -85,8 +140,20 @@ def load_checkpoint(
     path: Path,
     model: transformer_lens.HookedTransformer,
     optimizer: Optional[torch.optim.Optimizer] = None,
-) -> dict:
-    """Load a checkpoint and restore model (and optionally optimizer) state."""
+) -> dict:  # type: ignore[type-arg]
+    """Load a checkpoint and restore model (and optionally optimizer) state.
+
+    Args:
+        path: Path to a checkpoint file saved by save_checkpoint().
+        model: The HookedTransformer instance to restore weights into.
+        optimizer: If provided, the optimizer state dict is also restored.
+
+    Returns:
+        The full checkpoint dictionary including metadata.
+
+    Raises:
+        FileNotFoundError: If path does not exist.
+    """
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
@@ -94,8 +161,12 @@ def load_checkpoint(
     model.load_state_dict(payload["model_state_dict"])
     if optimizer is not None:
         optimizer.load_state_dict(payload["optimizer_state_dict"])
-    logger.info("Loaded checkpoint step=%d (%s)", payload["step"], payload.get("timestamp", "?"))
-    return payload
+    logger.info(
+        "Loaded checkpoint step=%d (timestamp: %s)",
+        payload["step"],
+        payload.get("timestamp", "unknown"),
+    )
+    return payload  # type: ignore[return-value]
 
 
 def build_scheduler(
@@ -103,23 +174,46 @@ def build_scheduler(
     total_steps: int,
     warmup_steps: int,
 ) -> torch.optim.lr_scheduler.LRScheduler:
-    """Cosine decay scheduler with linear warmup."""
-    warmup = LinearLR(optimizer, start_factor=1e-8, end_factor=1.0, total_iters=warmup_steps)
-    cosine = CosineAnnealingLR(optimizer, T_max=max(1, total_steps - warmup_steps), eta_min=0.0)
-    return SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[warmup_steps])
+    """Cosine decay scheduler with linear warmup.
+
+    Args:
+        optimizer: The optimizer whose learning rate will be scheduled.
+        total_steps: Total number of gradient steps in the run.
+        warmup_steps: Number of steps for the linear warmup phase.
+
+    Returns:
+        A SequentialLR that applies linear warmup then cosine decay.
+    """
+    warmup = LinearLR(
+        optimizer, start_factor=1e-8, end_factor=1.0, total_iters=warmup_steps
+    )
+    cosine = CosineAnnealingLR(
+        optimizer, T_max=max(1, total_steps - warmup_steps), eta_min=0.0
+    )
+    return SequentialLR(
+        optimizer, schedulers=[warmup, cosine], milestones=[warmup_steps]
+    )
 
 
 def train(
     model: transformer_lens.HookedTransformer,
-    dataloader: DataLoader,
+    dataloader: DataLoader,  # type: ignore[type-arg]
     config: TrainConfig,
-    compute_induction_scores_fn=None,
+    compute_induction_scores_fn: Optional[object] = None,
     device: Optional[str] = None,
-) -> list[dict]:
+) -> list[dict]:  # type: ignore[type-arg]
     """Run the fine-tuning training loop with automatic checkpointing.
 
+    Args:
+        model: A loaded HookedTransformer to fine-tune (in-place).
+        dataloader: DataLoader yielding dicts with input_ids tensors.
+        config: TrainConfig with all hyperparameters.
+        compute_induction_scores_fn: Callable(model) -> Tensor[layer, head].
+            If None, induction scores are skipped.
+        device: Torch device string. Inferred from model parameters if None.
+
     Returns:
-        List of per-checkpoint metadata dicts for downstream analysis.
+        List of checkpoint metadata dicts for downstream analysis.
     """
     if device is None:
         device = next(model.parameters()).device.type
@@ -128,15 +222,21 @@ def train(
     model.train()
     model.to(device)
 
-    optimizer = AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
+    optimizer = AdamW(
+        model.parameters(), lr=config.lr, weight_decay=config.weight_decay
+    )
     scheduler = build_scheduler(optimizer, config.total_steps, config.warmup_steps)
     ckpt_dir = Path(config.checkpoint_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-    history: list[dict] = []
+    history: list[dict] = []  # type: ignore[type-arg]
     step = 0
     tokens_seen = 0
-    logger.info("Training: %d total steps, checkpoint every %d", config.total_steps, config.checkpoint_every)
+    logger.info(
+        "Training: %d total steps, checkpoint every %d",
+        config.total_steps,
+        config.checkpoint_every,
+    )
 
     for batch in dataloader:
         if step >= config.total_steps:
@@ -151,26 +251,44 @@ def train(
         tokens_seen += input_ids.numel()
         step += 1
 
+        current_lr = scheduler.get_last_lr()[0]
         if step % 10 == 0:
-            logger.info("step=%d loss=%.4f lr=%.2e tokens=%d", step, loss.item(), scheduler.get_last_lr()[0], tokens_seen)
+            logger.info(
+                "step=%d | loss=%.4f | lr=%.2e | tokens=%d",
+                step,
+                loss.item(),
+                current_lr,
+                tokens_seen,
+            )
 
         if step % config.checkpoint_every == 0:
             model.eval()
             if compute_induction_scores_fn is not None:
-                ind_scores = compute_induction_scores_fn(model)
+                ind_scores = compute_induction_scores_fn(model)  # type: ignore[operator]
             else:
                 ind_scores = torch.zeros(model.cfg.n_layers, model.cfg.n_heads)
+
             ckpt_path = ckpt_dir / f"step_{step:06d}.pt"
             save_checkpoint(
-                path=ckpt_path, step=step, model=model, optimizer=optimizer,
-                loss=loss.item(), induction_scores=ind_scores, config=config, seed=config.seed,
+                path=ckpt_path,
+                step=step,
+                model=model,
+                optimizer=optimizer,
+                loss=loss.item(),
+                induction_scores=ind_scores,
+                config=config,
+                seed=config.seed,
             )
-            history.append({
-                "step": step, "loss": loss.item(),
-                "lr": scheduler.get_last_lr()[0], "tokens_seen": tokens_seen,
-                "induction_scores_mean": float(ind_scores.mean()),
-                "checkpoint_path": str(ckpt_path),
-            })
+            history.append(
+                {
+                    "step": step,
+                    "loss": loss.item(),
+                    "lr": current_lr,
+                    "tokens_seen": tokens_seen,
+                    "induction_scores_mean": float(ind_scores.mean()),
+                    "checkpoint_path": str(ckpt_path),
+                }
+            )
             model.train()
 
     logger.info("Training complete: %d steps, %d tokens", step, tokens_seen)

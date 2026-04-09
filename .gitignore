@@ -1,17 +1,52 @@
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+*.egg
 *.egg-info/
 dist/
 build/
+
+# Virtual environments
 .env
 .venv
+env/
+venv/
+
+# Jupyter
 .ipynb_checkpoints/
+
+# Large binary outputs
+# NOTE: These directories are excluded from git. To regenerate:
+#   Phase 1-4 results:  Run notebooks 01-04 in order (see README.md).
+#   Checkpoints:        Run notebooks/03_finetuning.ipynb (requires GPU, ~80 min/run).
+#   Paper figures:      Run notebooks/05_figures.ipynb after 01-04 complete.
+#   ONNX models:        Run src/viz/dashboard/onnx_export.py after checkpoints exist.
+#   DVC (future):       `dvc pull` will fetch all outputs once DVC remote is configured.
 checkpoints/
 experiments/results/
 paper/figures/
-src/viz/dashboard/onnx_models/*.onnx
+src/viz/dashboard/onnx_models/
+
+# DVC (data version control)
+.dvc/
+.dvcignore
+
+# Tool caches
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+htmlcov/
 .coverage
+
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

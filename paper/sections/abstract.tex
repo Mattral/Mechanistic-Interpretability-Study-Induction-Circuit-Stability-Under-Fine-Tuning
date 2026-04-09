@@ -1,15 +1,17 @@
 \begin{abstract}
-We investigate whether induction head circuits in attention-only transformers remain
-structurally stable when the model is fine-tuned on a narrow distribution, and characterise
-the training steps at which any structural change occurs.
-We fine-tune a two-layer attention-only transformer (\texttt{attn-only-2l}) on 500K tokens
-of Python code and a matched TinyStories prose control, measuring per-head induction scores
-and activation-patching attribution at every 100-step checkpoint across three random seeds
-(42, 123, 7).
-A change $\geq 0.1$ on the $[0,1]$ induction-score scale is treated as practically
-meaningful (stated a priori).
-\textbf{[FINDING PENDING EXPERIMENTAL RESULTS — to be populated from
-\texttt{notebooks/05\_figures.ipynb} after training.]}
-These results suggest that fine-tuning safety evaluations should include circuit-level
-diagnostics alongside capability benchmarks.
+We ask whether induction head circuits in attention-only transformers remain
+structurally stable when the model is fine-tuned on a narrow distribution,
+and at what training step any structural change first occurs.
+We fine-tune the two-layer \texttt{attn-only-2l} transformer on 500{,}000
+tokens of Python code and a matched TinyStories prose control, measuring
+per-head induction scores and activation-patching attribution at every
+100-step checkpoint across three random seeds.
+\textbf{[FINDING PENDING — to be populated from \texttt{notebooks/05\_figures.ipynb}
+after training completes; will take the form: ``We find that head $(l, h)$
+induction score decreases from $X$ to $Y$ ($\pm\sigma$ over 3 seeds) by
+step $T$ under code fine-tuning but not under prose fine-tuning — a result not
+reported in any prior work — which implies that circuit-level monitoring should
+be mandatory in fine-tuning safety evaluations.'']}
+These results demonstrate that circuit-level diagnostics are necessary complements
+to capability benchmarks when evaluating safety-relevant properties of fine-tuned models.
 \end{abstract}

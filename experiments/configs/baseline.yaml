@@ -1,0 +1,24 @@
+run_name: "baseline"
+description: "Evaluate induction circuit in pretrained attn-only-2l. No fine-tuning."
+
+model:
+  architecture: "attention-only"
+  num_layers: 2
+  num_heads: 8
+  d_model: 256
+  d_head: 32
+  source: "attn-only-2l"
+  tokenizer: "gpt2"
+
+eval:
+  induction_seq_length: 50
+  induction_num_sequences: 500
+  induction_circuit_threshold: 0.5
+  phase_window: 5
+  phase_threshold: 0.1
+  adversarial_num_prompts: 20
+  seed: 42
+
+output:
+  results_dir: "experiments/results"
+  figures_dir: "paper/figures"

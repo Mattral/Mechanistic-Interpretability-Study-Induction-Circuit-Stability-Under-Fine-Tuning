@@ -1,0 +1,20 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have presented the first systematic characterisation of induction circuit stability
+under fine-tuning in two-layer attention-only transformers.
+By measuring per-head induction scores and activation-patching attribution at every
+100-step checkpoint across both a code and a prose condition, we provide a replicable
+methodology for circuit-level monitoring during fine-tuning.
+
+\textbf{[SUMMARY PENDING EXPERIMENTAL RESULTS]}
+
+The interactive visualisation dashboard and full codebase are released alongside this
+paper, enabling practitioners to apply circuit-level monitoring to their own
+fine-tuning pipelines.
+
+\textbf{Future work.}
+(1)~Extend to GPT-2 small (with MLP layers) using automated circuit
+discovery~\citep{conmy2023automated}.
+(2)~Investigate circuit-targeted regularisation during fine-tuning to preserve
+induction circuit integrity while maintaining task performance.

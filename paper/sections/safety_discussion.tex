@@ -1,0 +1,18 @@
+\section{Safety Discussion}
+\label{sec:safety}
+
+The induction circuit is fundamental to in-context learning~\citep{olsson2022context}.
+If fine-tuning on a narrow distribution degrades this circuit, deployed fine-tuned
+models may exhibit reduced in-context generalisation outside their target domain---a
+property standard capability benchmarks do not measure.
+
+\textbf{Implication for fine-tuning safety evaluations:} Our results
+(\textbf{pending}) suggest induction scores should be included alongside capability
+benchmarks when evaluating fine-tuned models.
+A model that passes benchmarks but shows degraded induction scores may be less robust
+to novel in-context prompts encountered in deployment.
+
+Additionally, if phase transitions in circuit metrics occur during fine-tuning,
+standard early-stopping criteria based on validation loss may not capture circuit
+degradation---a training run can lower loss while simultaneously restructuring safety-
+relevant computational mechanisms.

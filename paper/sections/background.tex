@@ -1,0 +1,35 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{The Transformer Circuits Framework}
+\citet{elhage2021mathematical} developed a mathematical framework for decomposing
+transformer computations into named circuits operating on the residual stream.
+Each attention head writes a low-rank update; the final prediction is determined by
+the accumulated sum projected through the unembedding matrix.
+This linearity enables direct logit attribution: each head's contribution to the
+final prediction can be computed without re-running the model.
+
+\subsection{Induction Heads}
+\citet{olsson2022context} identified induction heads as the primary mechanism
+underlying in-context learning.
+An induction head at layer~$l$ attends to the token that follows the previous
+occurrence of the current token, implementing a copy-and-complete pattern:
+if $A \to B$ was seen earlier, the model predicts $B$ after the next $A$.
+
+In two-layer attention-only models, the circuit consists of: (1) a
+\emph{previous-token head} in layer~0 that copies each token's identity to the
+next residual-stream position; and (2) an \emph{induction head} in layer~1 that
+reads this information to look back at previous occurrences.
+
+\subsection{Activation Patching}
+Activation patching~\citep{conmy2023automated} establishes causal claims by replacing
+one component's activation from a corrupted run with the corresponding activation from
+a clean run, measuring recovery of the target behaviour.
+We use second-half shuffling as the corruption, following \citet{wang2022interpretability}.
+
+\subsection{Circuit Stability Under Fine-Tuning}
+Prior work has studied catastrophic forgetting at the capability level but circuit-level
+stability during fine-tuning has not been studied.
+\citet{marks2024sparse} demonstrated that circuits can be identified and edited, but not
+their dynamics under gradient descent.
+This paper fills that gap for the induction circuit.

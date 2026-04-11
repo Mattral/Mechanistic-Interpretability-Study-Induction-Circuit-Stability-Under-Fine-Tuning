@@ -25,7 +25,7 @@ ONNX Runtime — no GPU required.
 3. Click **Create Space**
 
 You will get a URL like:
-`https://huggingface.co/spaces/YOUR_USERNAME/induction-circuit-stability`
+`https://huggingface.co/spaces/Mattral/induction-circuit-stability`
 
 ---
 
@@ -35,8 +35,8 @@ You will get a URL like:
 # Install git-lfs (required for ONNX files > 10 MB)
 git lfs install
 
-# Clone the Space repo (replace with your username and space name)
-git clone https://huggingface.co/spaces/YOUR_USERNAME/induction-circuit-stability
+# Clone the Space repo
+git clone https://huggingface.co/spaces/Mattral/induction-circuit-stability
 cd induction-circuit-stability
 ```
 
@@ -106,7 +106,7 @@ Also update the GitHub repo's `README.md`:
 ```markdown
 ## Interactive Dashboard
 
-[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/YOUR_USERNAME/induction-circuit-stability)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/Mattral/induction-circuit-stability)
 ```
 
 ---
@@ -120,7 +120,7 @@ git push
 ```
 
 Hugging Face will build the Space automatically. Watch the build log at:
-`https://huggingface.co/spaces/YOUR_USERNAME/induction-circuit-stability`
+`https://huggingface.co/spaces/Mattral/induction-circuit-stability`
 
 Cold-start time depends on ONNX model size; target is **< 3 seconds** after models are cached.
 
@@ -170,7 +170,7 @@ api = HfApi()
 api.upload_file(
     path_or_fileobj="onnx_models/model_pre.onnx",
     path_in_repo="onnx_models/model_pre.onnx",
-    repo_id="YOUR_USERNAME/induction-circuit-stability",
+    repo_id="Mattral/induction-circuit-stability",
     repo_type="space",
 )
 ```

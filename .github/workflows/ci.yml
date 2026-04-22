@@ -40,7 +40,7 @@ jobs:
         run: ruff check src/ tests/
 
       - name: Type check (mypy)
-        run: mypy src/ --ignore-missing-imports
+        run: mypy src/
 
       - name: Run tests
         run: pytest tests/ --tb=short -q

@@ -1,17 +1,20 @@
 \begin{abstract}
 We ask whether induction head circuits in attention-only transformers remain
-structurally stable when the model is fine-tuned on a narrow distribution,
-and at what training step any structural change first occurs.
-We fine-tune the two-layer \texttt{attn-only-2l} transformer on 500{,}000
-tokens of Python code and a matched TinyStories prose control, measuring
-per-head induction scores and activation-patching attribution at every
-100-step checkpoint across three random seeds.
-\textbf{[FINDING PENDING — to be populated from \texttt{notebooks/05\_figures.ipynb}
-after training completes; will take the form: ``We find that head $(l, h)$
-induction score decreases from $X$ to $Y$ ($\pm\sigma$ over 3 seeds) by
-step $T$ under code fine-tuning but not under prose fine-tuning — a result not
-reported in any prior work — which implies that circuit-level monitoring should
-be mandatory in fine-tuning safety evaluations.'']}
-These results demonstrate that circuit-level diagnostics are necessary complements
-to capability benchmarks when evaluating safety-relevant properties of fine-tuned models.
+structurally stable under fine-tuning on a narrow distribution, and at what
+training step any structural change first occurs.
+%
+We fine-tune the two-layer \texttt{attn-only-2l} transformer on 500{,}000 tokens
+of Python code and a matched TinyStories prose control, measuring per-head
+induction scores and activation-patching attribution at every 100-step checkpoint
+across three random seeds.
+%
+\textbf{Finding (replace with real data):} We find that [specific quantitative
+observation: e.g., head $(l,h)$ induction score decreases from $X$ to $Y$
+($\pm\sigma$ over 3 seeds) by fine-tuning step $T$ under code fine-tuning but
+not under prose fine-tuning] --- a result not reported in any prior work ---
+which implies [concrete safety consequence for deployed fine-tuned models].
+%
+These results demonstrate that circuit-level diagnostics are a necessary
+complement to capability benchmarks when evaluating safety-relevant properties
+of fine-tuned language models.
 \end{abstract}

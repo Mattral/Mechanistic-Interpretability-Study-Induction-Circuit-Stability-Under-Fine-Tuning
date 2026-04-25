@@ -53,7 +53,9 @@ def compute_direct_logit_attribution(
 
     with torch.no_grad():
         _, cache = model.run_with_cache(
-            tokens, names_filter=lambda n: n.endswith("hook_z"), return_type=None,
+            tokens, names_filter=lambda n: n.endswith("hook_z"),
+        prepend_bos=False,
+        return_type=None,
         )
 
     W_U = model.W_U  # [d_model, vocab]

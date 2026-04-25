@@ -47,6 +47,7 @@ def compute_path_patching_scores(
         _, clean_cache = model.run_with_cache(
             clean_tokens,
             names_filter=lambda n: n.endswith("hook_z"),
+            prepend_bos=False,
             return_type=None,
         )
 

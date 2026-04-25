@@ -28,13 +28,6 @@ def test_score_range(small_model):
     assert float(scores.max()) <= 1.0 + 1e-5
 
 
-def test_layer1_has_high_induction_head(small_model):
-    """attn-only-2l layer 1 must have at least one head with IS >= 0.5."""
-    from src.circuits.induction_score import compute_induction_score
-    scores = compute_induction_score(small_model, sequence_length=30, num_sequences=50, seed=42, device="cpu")
-    assert float(scores[1].max()) >= 0.5, f"Expected IS >= 0.5 in L1, got {float(scores[1].max()):.3f}"
-
-
 def test_score_reproducibility(small_model):
     from src.circuits.induction_score import compute_induction_score
     a = compute_induction_score(small_model, sequence_length=20, num_sequences=20, seed=42, device="cpu")
@@ -80,4 +73,31 @@ def test_score_known_non_induction_head(small_model: transformer_lens.HookedTran
     assert layer_0_mean < 0.3, (
         f"Layer-0 mean induction score should be < 0.3 (previous-token heads), "
         f"got {layer_0_mean:.3f}. Possible regression in induction score computation."
+    )
+
+def test_score_known_induction_head(small_model: transformer_lens.HookedTransformer) -> None:
+    """Known induction head in attn-only-2l must score above 0.7.
+
+    Spec Section 8.1: "known head scores above 0.7"
+
+    The attn-only-2l pretrained model is specifically constructed to exhibit
+    strong induction heads. At least one head in layer 1 must score > 0.7
+    on the canonical repeated-token task. Scores below 0.7 indicate either
+    a model loading error or a regression in induction score computation.
+    """
+    from src.circuits.induction_score import compute_induction_score
+
+    scores = compute_induction_score(
+        model=small_model,
+        sequence_length=30,
+        num_sequences=100,
+        seed=42,
+        device="cpu",
+    )
+    # Layer 1 contains the induction heads per Olsson et al. (2022)
+    layer_1_max = float(scores[1].max())
+    assert layer_1_max > 0.7, (
+        f"Expected at least one layer-1 head with induction score > 0.7 "
+        f"(spec Section 8.1), got max = {layer_1_max:.4f}. "
+        "This may indicate a model loading error or a bug in compute_induction_score."
     )

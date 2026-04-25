@@ -59,7 +59,7 @@ def _get_tokenizer():
     global _tokenizer
     if _tokenizer is None:
         from transformers import AutoTokenizer
-        _tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        _tokenizer = AutoTokenizer.from_pretrained("NeelNanda/gpt-neox-tokenizer-digits")
         if _tokenizer.pad_token is None:
             _tokenizer.pad_token = _tokenizer.eos_token
     return _tokenizer

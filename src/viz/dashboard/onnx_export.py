@@ -17,6 +17,7 @@ import transformer_lens
 
 from src.circuits.induction_score import compute_induction_score
 from src.model.config import ModelConfig
+# Note: ModelConfig.tokenizer defaults to NeelNanda/gpt-neox-tokenizer-digits (DECISION-006)
 from src.model.train import load_checkpoint, load_pretrained_model, set_global_seed
 
 logger = logging.getLogger(__name__)

@@ -19,7 +19,7 @@ class ModelConfig:
     d_model: int = 256
     d_head: int = 32
     source: str = "attn-only-2l"
-    tokenizer: str = "gpt2"
+    tokenizer: str = "NeelNanda/gpt-neox-tokenizer-digits"
     act_fn: Optional[str] = None
 
     def __post_init__(self) -> None:

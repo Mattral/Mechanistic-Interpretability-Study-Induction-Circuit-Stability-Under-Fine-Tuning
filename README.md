@@ -232,3 +232,46 @@ pytest tests/ -v
 ---
 
 **Authors:** [Mattral](https://github.com/Mattral) | **License:** Apache 2.0 License (See [LICENSE](https://www.google.com/search?q=LICENSE))
+
+---
+
+### Critical Bugs Fixed During Development
+
+Two implementation bugs were discovered and fixed through live experimentation:
+
+| # | Bug | Symptom | Fix |
+|---|-----|---------|-----|
+| [DECISION-005](decisions/DECISION_LOG.md) | TransformerLens prepends BOS token by default, offsetting all attention positions by +1 | Induction scores near zero (~0.04) despite correct circuit attribution | `prepend_bos=False` in all `run_with_cache()` calls |
+| [DECISION-006](decisions/DECISION_LOG.md) | `attn-only-2l` uses `NeelNanda/gpt-neox-tokenizer-digits`, not `gpt2` | Garbled attention patterns in dashboard | All tokenizer loads updated to `NeelNanda/gpt-neox-tokenizer-digits` |
+
+Both bugs were identified from live experimental output (notebook runs + HF Space testing).
+See `decisions/DECISION_LOG.md` for full evidence trail.
+
+---
+
+## Commit Standards (Section 10)
+
+Format: `<type>(<scope>): <subject>` — no exceptions.
+
+| Field | Values |
+|-------|--------|
+| `type` | `feat` \| `fix` \| `exp` \| `docs` \| `test` \| `refactor` \| `deps` \| `chore` |
+| `scope` | `model` \| `circuits` \| `analysis` \| `viz` \| `paper` \| `notebooks` \| `ci` |
+| `subject` | Imperative mood, ≤ 72 chars, no full stop |
+
+**Examples:**
+```
+feat(circuits): add path patching for indirect effect decomposition
+exp(model): add checkpoint sweep across all fine-tuning runs
+fix(induction_score): correct off-by-one in repeated sequence construction
+docs(paper): draft results section with Fig 5 and Fig 6 references
+test(patching): add clean-run full-recovery assertion
+deps: update gradio to 4.37.2
+```
+
+**Rules:**
+- Every commit must leave the codebase in a runnable state.
+- No broken imports, no half-finished refactors in `src/`.
+- Scratch work goes in `notebooks/`, never in `src/`.
+- No direct commits to `main`. All changes via branch + self-review.
+

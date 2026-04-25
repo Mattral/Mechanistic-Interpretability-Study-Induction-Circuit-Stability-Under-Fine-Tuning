@@ -55,3 +55,26 @@ $\text{Attr}$ & Activation-patching attribution & $[L, H]$ \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\subsection{Implementation Details}
+\label{sec:implementation}
+
+\textbf{BOS token offset (DECISION-005).}
+TransformerLens prepends a beginning-of-sequence (BOS) token by default,
+shifting all attention position indices by $+1$.
+Without correction, the formula IS$(l,h) = \frac{1}{n}\sum_i A^{(l,h)}[n+i, i]$
+reads attention weights at the wrong positions, producing scores near zero
+even for genuine induction heads.
+We pass \texttt{prepend\_bos=False} to every \texttt{run\_with\_cache()} call
+so the attention matrix has dimensions $[\text{batch}, n_\text{heads}, 2n, 2n]$
+with no BOS offset.
+This is consistent with Nanda's original TransformerLens tutorial implementation.
+
+\textbf{Tokenizer (DECISION-006).}
+The \texttt{attn-only-2l} model uses the \texttt{NeelNanda/gpt-neox-tokenizer-digits}
+tokenizer (vocabulary size $\approx 48{,}262$), not the standard GPT-2 tokenizer
+(vocabulary size $50{,}257$).
+All tokenizer loads across the codebase use the correct neox tokenizer.
+Using the GPT-2 tokenizer produces incorrect token IDs for the dashboard
+ONNX inference pipeline.
+

@@ -9,9 +9,9 @@ Update this file as each item is completed. Use [x] for done, [ ] for pending.
 
 - [ ] `conda env create -f environment.yml` runs without errors
 - [ ] `pytest tests/ -q` passes all tests (CI green)
-- [ ] `notebooks/01_replication.ipynb` runs top-to-bottom without errors
+- [ ] `notebooks/01_replication.ipynb` **re-run** with BOS fix (DECISION-005) — L1H6 IS should be ~0.9+
 - [ ] `experiments/results/baseline_induction_scores.npz` saved
-- [ ] Layer-1 induction head confirmed (IS ≥ 0.5, consistent with Olsson et al. 2022)
+- [ ] Layer-1 induction head confirmed (IS ≥ 0.7, specifically L1H6 ≈ 0.9 per attribution evidence)
 - [ ] `paper/figures/fig3_induction_scores_baseline.{pdf,png}` generated
 
 ## Phase 2 — Causal Verification
@@ -48,8 +48,9 @@ Update this file as each item is completed. Use [x] for done, [ ] for pending.
 - [ ] ONNX models exported: `src/viz/dashboard/onnx_models/model_pre.onnx`
 - [ ] ONNX models exported: `src/viz/dashboard/onnx_models/model_post.onnx`
 - [ ] Dashboard loads in < 3 seconds on standard laptop CPU (measured, record time)
-- [ ] Dashboard deployed to Hugging Face Spaces
+- [x] Dashboard deployed to Hugging Face Spaces — https://huggingface.co/spaces/Mattral/induction-circuit-stability
 - [ ] HF Spaces URL added to README.md
+- [ ] Tokenizer confirmed as `NeelNanda/gpt-neox-tokenizer-digits` in all ONNX paths (DECISION-006)
 - [ ] Dashboard smoke-tested: attention heatmap, induction grid, circuit diagram all render
 
 ## Phase 6 — Paper Figures
@@ -87,3 +88,14 @@ Update this file as each item is completed. Use [x] for done, [ ] for pending.
 ---
 
 _Last updated: 2026-06 (scaffold complete; experiments pending)_
+
+---
+
+## Bugs Discovered and Fixed During Experimentation
+
+These were not pre-existing spec items — they were found through live runs:
+
+- [ ] **DECISION-005 (BOS fix) verified**: Re-run notebooks 01–04 confirm IS scores are now correct (L1H6 ~0.9+)
+- [x] **DECISION-006 (tokenizer fix) applied**: `NeelNanda/gpt-neox-tokenizer-digits` used everywhere
+- [ ] All figures regenerated after BOS fix (fig3 IS heatmap will look completely different)
+

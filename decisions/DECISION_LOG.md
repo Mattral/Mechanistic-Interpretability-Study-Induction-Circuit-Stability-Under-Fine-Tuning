@@ -169,3 +169,40 @@ configuration. Notebooks 01-04 that use the tokenizer must be re-run with this
 fix. The HF Space ONNX models in `onnx_models/` remain valid (they were
 exported with the model itself, not with gpt2).
 
+
+---
+
+## DECISION-007: Safe transformer_lens version retrieval
+
+**Date:** 2026-06
+**Status:** Decided — confirmed by Colab T4 run (notebook 03)
+
+**Context:** `save_checkpoint()` accessed `transformer_lens.__version__`
+directly. On Colab, the pip-installed `transformer_lens` package does not
+expose a top-level `__version__` attribute, raising:
+```
+AttributeError: module 'transformer_lens' has no attribute '__version__'
+```
+This crashed `run_finetuning()` at the very first checkpoint (step 0),
+after baseline metrics were already computed and logged.
+
+**Decision:** Added `_get_transformer_lens_version()` helper in
+`src/model/train.py` that tries `transformer_lens.__version__` first, falls
+back to `importlib.metadata.version("transformer_lens")`, and returns
+`"unknown"` if neither succeeds. `save_checkpoint()` now calls this helper
+instead of accessing the attribute directly.
+
+**Consequences:** Checkpoints saved on environments without
+`transformer_lens.__version__` will record the version from package
+metadata (or "unknown") instead of crashing. No change to checkpoint
+structure or downstream analysis code.
+
+**Note on the parallel BOS issue:** The Colab run's `IS_mean=0.0336` at
+step 0 (matching the pre-fix `fig3_induction_scores_baseline.png`, where
+L1H6=0.04) confirms the BOS fix (DECISION-005) has **not yet propagated to
+the GitHub repository**. Notebook 03 clones from GitHub
+(`Mattral/Mechanistic-Interpretability-Study-...`), which still contains the
+pre-fix `induction_score.py`. The BOS and tokenizer fixes (DECISION-005,
+DECISION-006) exist only in the delivered zip archives. **Action required:**
+push the corrected `src/` tree (from `mech-interp-induction-final-v3.zip`) to
+the GitHub repository before re-running notebooks 01–04 on Colab.

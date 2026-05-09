@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import importlib.metadata
 import logging
 import random
 from pathlib import Path
@@ -18,6 +19,26 @@ from torch.utils.data import DataLoader
 from src.model.config import ModelConfig, TrainConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _get_transformer_lens_version() -> str:
+    """Return the installed transformer_lens version string.
+
+    Some transformer_lens releases (notably recent pip-installed versions
+    on Colab) do not expose a top-level ``__version__`` attribute, which
+    raises AttributeError if accessed directly. This falls back to
+    importlib.metadata, and finally to "unknown" if neither works.
+
+    Returns:
+        Version string, or "unknown" if it cannot be determined.
+    """
+    try:
+        return str(transformer_lens.__version__)
+    except AttributeError:
+        try:
+            return importlib.metadata.version("transformer_lens")
+        except importlib.metadata.PackageNotFoundError:
+            return "unknown"
 
 
 def configure_logging(level: int = logging.INFO) -> None:
@@ -128,7 +149,7 @@ def save_checkpoint(
         "induction_scores": induction_scores.cpu(),
         "config": dataclasses.asdict(config),
         "seed": seed,
-        "transformer_lens_version": transformer_lens.__version__,
+        "transformer_lens_version": _get_transformer_lens_version(),
         "torch_version": torch.__version__,
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
     }

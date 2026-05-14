@@ -206,3 +206,65 @@ pre-fix `induction_score.py`. The BOS and tokenizer fixes (DECISION-005,
 DECISION-006) exist only in the delivered zip archives. **Action required:**
 push the corrected `src/` tree (from `mech-interp-induction-final-v3.zip`) to
 the GitHub repository before re-running notebooks 01–04 on Colab.
+
+---
+
+## DECISION-008: codeparrot/github-code subset name and trust_remote_code
+
+**Date:** 2026-06
+**Status:** Decided — confirmed by Colab T4 run (notebook 03, code fine-tuning)
+
+**Context:** `run_finetuning()` crashed on the first call to
+`build_code_dataloader()` with:
+```
+ValueError: BuilderConfig 'Python' not found.
+Available: ['all-all', 'all-mit', ..., 'Python-all', 'Python-mit', ...]
+```
+`codeparrot/github-code` does not expose a bare `"Python"` builder config —
+subset names are `"<Language>-<license>"`, e.g. `"Python-all"` (all
+licenses) or `"Python-mit"` (MIT-licensed only).
+
+A second, related issue: loading this dataset triggers an interactive
+`Do you wish to run the custom code? [y/N]` prompt (the dataset ships a
+custom loading script). In a non-interactive Colab cell this prompt would
+hang indefinitely; the user's run only proceeded because they answered
+manually before the ValueError occurred downstream.
+
+**Decision:**
+1. `TrainConfig.dataset_subset` default changed from `"Python"` to
+   `"Python-all"` (all licenses, broadest sample — matches the "Python code"
+   framing in the hypothesis with no license-based filtering bias).
+2. `experiments/configs/finetune_code.yaml` updated to match.
+3. `load_dataset(...)` in `TokenisedStreamDataset.__iter__` now passes
+   `trust_remote_code=True` so the prompt never blocks execution.
+
+**Consequences:** No change to the prose control (`roneneldan/TinyStories`
+has no custom loading script and a single default config, so it is
+unaffected). All three code fine-tuning seeds (42, 123, 7) must be re-run
+from notebook 03 with this fix.
+
+---
+
+## DECISION-009: d_model / d_head corrected to match attn-only-2l (512 / 64)
+
+**Date:** 2026-06
+**Status:** Decided — confirmed by Colab T4 run (notebook 03 log)
+
+**Context:** `ModelConfig` and all three experiment YAMLs stated
+`d_model=256, d_head=32`. The actual loaded model reports:
+```
+Model loaded: 2L 8H d_model=512
+```
+With `n_heads=8`, this implies `d_head = 512/8 = 64`, not 32. The stated
+values (256/32) were incorrect from the start — likely transcribed from a
+different TransformerLens toy model rather than `attn-only-2l` itself.
+
+**Decision:** Updated `d_model: int = 512` and `d_head: int = 64` in
+`src/model/config.py`, all three `experiments/configs/*.yaml` files, and
+`paper/sections/methods.tex`. The `ModelConfig.__post_init__` validator
+(`d_model == num_heads * d_head`) passes for 512 == 8*64.
+
+**Consequences:** Purely a metadata/documentation correction — no code
+path hardcoded the old 256/32 values (all dimensions are read dynamically
+from `model.cfg` at runtime), so no functional behaviour changes. The paper
+methods section now correctly states the model's actual architecture.

@@ -78,6 +78,7 @@ class TokenisedStreamDataset(IterableDataset):  # type: ignore[type-arg]
             self.hf_subset,
             split="train",
             streaming=True,
+            trust_remote_code=True,
         ).shuffle(seed=self.seed, buffer_size=1000)
         buffer: list[int] = []
         tokens_yielded = 0

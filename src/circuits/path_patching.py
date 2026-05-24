@@ -9,7 +9,6 @@ from typing import Optional
 
 import torch
 import transformer_lens
-from jaxtyping import Float
 from torch import Tensor
 from src.circuits.patching import _build_clean_and_corrupted, _compute_logit_diff
 
@@ -22,7 +21,7 @@ def compute_path_patching_scores(
     batch_size: int = 32,
     seed: int = 42,
     device: Optional[str] = None,
-) -> Float[Tensor, "src_layer src_head dst_layer dst_head"]:
+) -> Tensor:
     """Compute path patching scores for all head-to-head paths.
 
     For each (src, dst) pair, measures recovery of induction behaviour
@@ -101,7 +100,7 @@ def compute_path_patching_scores(
 
 
 def get_significant_paths(
-    path_scores: Float[Tensor, "src_layer src_head dst_layer dst_head"],
+    path_scores: Tensor,
     threshold: float = 0.3,
 ) -> list[tuple[int, int, int, int]]:
     """Return (src_layer, src_head, dst_layer, dst_head) tuples above threshold."""

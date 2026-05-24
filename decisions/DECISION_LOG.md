@@ -268,3 +268,106 @@ different TransformerLens toy model rather than `attn-only-2l` itself.
 path hardcoded the old 256/32 values (all dimensions are read dynamically
 from `model.cfg` at runtime), so no functional behaviour changes. The paper
 methods section now correctly states the model's actual architecture.
+
+---
+
+## DECISION-005 (REVISED): Induction score off-by-one in key index — A[n+j, j+1], not A[n+i, i]
+
+**Date:** 2026-06
+**Status:** SUPERSEDES the original DECISION-005 (BOS fix). The BOS diagnosis
+was incorrect; this entry documents the real bug and the correct fix.
+
+**Context — why DECISION-005 (original) was wrong:**
+The original DECISION-005 attributed near-zero induction scores
+(L1H6 IS=0.035 vs attribution=0.96) to TransformerLens prepending a BOS
+token, and fixed it via `prepend_bos=False`. After pushing this fix to
+GitHub and re-running notebooks 01-03 on Colab (confirmed via
+`!grep -n prepend_bos src/circuits/induction_score.py` showing the fix
+present on disk), **the result was unchanged**: `IS_mean=0.0336`,
+`L1H6=0.035`, identical to four decimal places across multiple runs.
+
+This ruled out BOS entirely: `compute_induction_score()` constructs test
+sequences as raw `torch.randint` integer tensors, not strings. TransformerLens
+only invokes its tokenizer (and BOS-prepending) when given string input;
+integer tensors are passed straight to the forward pass unchanged.
+`prepend_bos` was a no-op in this code path the whole time — the sequence
+the model saw was always exactly `2n` tokens with no offset.
+
+**The real bug — wrong key index:**
+Olsson et al. (2022) define the prefix-matching score as: for a sequence
+of `n` unique tokens repeated twice (`2n` total), the score is the average
+attention "from the source token $x_i$ to the **next token of its previous
+occurrence**", normalised by `1/(n-1)`:
+$$\frac{1}{n-1}\sum_{i=n+1}^{2n} \alpha(x_i,\, x_{i-(n-1)})$$
+(Olsson et al. 2022, also confirmed by Wang et al. 2022's "induction score":
+"average attention probability from $T_i$ to the token that comes after the
+first occurrence of $T_i$").
+
+Converting to 0-indexed positions: for `j` in `[0, n-2]`, the score reads
+`A[n+j, j+1]` — attention from the second occurrence of token `j` back to
+position `j+1`, which holds the token that **followed** token `j`'s first
+occurrence (the value the induction head needs to copy).
+
+Our implementation read `A[n+i, i]` for `i` in `[0, n-1]` — attention from
+the second occurrence of token `i` back to position `i`, i.e. back to
+**itself**'s first occurrence, not to the following token. This measures
+something closer to "duplicate-detection" than "copy-the-next-token",
+and is near-zero for a genuine induction head, which is exactly what we
+observed (L1H6: 0.035).
+
+**Decision:** Rewrote `compute_induction_score()` and
+`compute_induction_score_with_stats()` in `src/circuits/induction_score.py`:
+- `query_positions = arange(n, 2n-1)` (was `arange(n, 2n)`) — `n-1` positions
+- `key_positions = arange(1, n)` (was `arange(0, n)`) — `n-1` positions,
+  shifted by `+1`
+- Mean is now over `n-1` elements per sequence, matching Olsson's `1/(n-1)`
+  normalisation (previously `1/n`)
+- `prepend_bos=False` retained defensively (harmless, costs nothing, correct
+  if a future caller passes string input) but the module docstring now
+  correctly states it has no effect on the current integer-tensor code path
+
+**Expected result after this fix:** L1H6 induction score should now be
+≈0.9, consistent with the independently-measured attribution score of 0.96
+for the same head, and with Olsson et al.'s characterisation of
+`attn-only-2l`.
+
+**Consequences:**
+- All notebooks (01, 02, 03, 04) must be re-run from a fresh GitHub clone
+  with this fix.
+- `test_score_known_induction_head` (>0.7) and
+  `test_score_known_non_induction_head` (<0.3) should now pass; if L0H7
+  (previously 0.281, the highest non-L1H6 score) shifts under the new
+  formula, the 0.3 threshold for that test may need re-validation against
+  real output — this is noted as a follow-up check, not assumed in advance.
+- The original DECISION-005 entry is left in the log for historical
+  traceability (shows the debugging process), but its `prepend_bos=False`
+  fix is NOT the explanation for the original discrepancy. DECISION-007's
+  note about "push v5 to GitHub" remains correct procedurally (the fix
+  must still be pushed) but its diagnosis of *why* the numbers were
+  unchanged was incomplete until this entry.
+
+---
+
+## DECISION-010: Remove unused jaxtyping import (ImportError risk)
+
+**Date:** 2026-06
+**Status:** Decided — found during DECISION-005 (REVISED) audit
+
+**Context:** `src/circuits/patching.py`, `attribution.py`, and
+`path_patching.py` each had `from jaxtyping import Float` at module level,
+used only for type-hint annotations like `Float[Tensor, "layer head"]`.
+`jaxtyping` was removed from `requirements.txt` in an earlier audit
+(it was not in the spec's Section 9 package list), but these three files
+were missed — they would raise `ImportError: No module named 'jaxtyping'`
+on any environment where `jaxtyping` isn't a transitive dependency of
+`transformer_lens`. The Colab runs so far have not hit this error, implying
+`jaxtyping` is currently installed transitively — but this is fragile and
+version-dependent.
+
+**Decision:** Removed `from jaxtyping import Float` and replaced
+`Float[Tensor, "..."]` type annotations with plain `Tensor` in all three
+files. The shape information is preserved in docstrings instead.
+
+**Consequences:** None functionally — these were type-hint-only imports.
+Removes a latent `ImportError` risk for any environment where
+`transformer_lens` stops vendoring `jaxtyping` as a transitive dependency.

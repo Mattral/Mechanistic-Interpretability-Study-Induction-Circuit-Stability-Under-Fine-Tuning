@@ -13,7 +13,6 @@ from typing import Optional
 
 import torch
 import transformer_lens
-from jaxtyping import Float
 from torch import Tensor
 
 logger = logging.getLogger(__name__)
@@ -75,7 +74,7 @@ def compute_circuit_attribution(
     batch_size: int = 32,
     seed: int = 42,
     device: Optional[str] = None,
-) -> Float[Tensor, "layer head"]:
+) -> Tensor:
     """Compute per-head attribution scores via activation patching.
 
     Args:
@@ -137,7 +136,7 @@ def compute_circuit_attribution(
 
 
 def get_circuit_heads(
-    attribution_scores: Float[Tensor, "layer head"],
+    attribution_scores: Tensor,
     threshold: float = CIRCUIT_THRESHOLD,
 ) -> list[tuple[int, int]]:
     """Extract circuit heads above threshold."""

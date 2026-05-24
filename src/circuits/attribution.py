@@ -9,7 +9,6 @@ from typing import Optional
 
 import torch
 import transformer_lens
-from jaxtyping import Float
 from torch import Tensor
 
 logger = logging.getLogger(__name__)
@@ -21,7 +20,7 @@ def compute_direct_logit_attribution(
     target_positions: Optional[torch.Tensor] = None,
     target_tokens: Optional[torch.Tensor] = None,
     device: Optional[str] = None,
-) -> Float[Tensor, "layer head"]:
+) -> Tensor:
     """Compute direct logit attribution for each attention head.
 
     DLA[l,h] = mean over target positions of (head output projected through W_O W_U)

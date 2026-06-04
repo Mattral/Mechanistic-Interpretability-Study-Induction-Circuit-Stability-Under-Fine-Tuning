@@ -106,18 +106,63 @@ def plot_induction_score_over_training(
     highlight_heads: Optional[list[tuple[int, int]]] = None,
     save_path: Optional[Path] = None,
 ) -> plt.Figure:
-    """Induction score trajectories for all heads (Figures 5 and 6)."""
+    """Induction score trajectories for all heads (Figures 5 and 6).
+
+    Args:
+        steps: Checkpoint step numbers, shape [n_checkpoints].
+        induction_scores: Per-checkpoint induction scores,
+            shape [n_checkpoints, n_layers, n_heads].
+        n_layers: Number of transformer layers.
+        n_heads: Number of heads per layer.
+        title: Figure title.
+        highlight_heads: (layer, head) pairs to draw bold and label.
+            - None: highlight nothing; draw every head at full opacity
+              (no head is presumed special).
+            - []: empty list. Rather than silently dimming every line
+              (a latent bug if the caller's circuit-head list was
+              accidentally empty, e.g. from a stale/empty upstream
+              array), fall back to auto-highlighting the single head
+              with the highest induction score at the LAST checkpoint,
+              with a "(auto)" suffix in the legend so the fallback is
+              visible to the reader.
+            - non-empty list: highlight exactly these heads.
+        save_path: If provided, save the figure (PDF + PNG).
+
+    Returns:
+        The matplotlib Figure.
+    """
     cmap = plt.get_cmap("tab10")
     fig, ax = plt.subplots(figsize=(10, 5))
+
+    auto_fallback = False
+    if highlight_heads is not None and len(highlight_heads) == 0:
+        # Empty (but not None) highlight list -- auto-fallback to the
+        # highest-scoring head at the final checkpoint so the figure is
+        # never silently all-dimmed.
+        final_scores = induction_scores[-1]  # [n_layers, n_heads]
+        top = np.unravel_index(np.argmax(final_scores), final_scores.shape)
+        highlight_heads = [(int(top[0]), int(top[1]))]
+        auto_fallback = True
+        logger.warning(
+            "plot_induction_score_over_training: highlight_heads was empty; "
+            "auto-highlighting L%dH%d (highest final-checkpoint score = %.4f). "
+            "Check that circuit_heads was loaded correctly upstream.",
+            highlight_heads[0][0], highlight_heads[0][1],
+            float(final_scores[highlight_heads[0]]),
+        )
+
     for layer in range(n_layers):
         for head in range(n_heads):
             scores = induction_scores[:, layer, head]
             color = cmap(layer % 10)
             is_hl = highlight_heads is not None and (layer, head) in highlight_heads
+            label = None
+            if is_hl:
+                label = f"L{layer}H{head}" + (" (auto)" if auto_fallback else "")
             ax.plot(steps, scores, color=color,
                     linewidth=2.0 if is_hl else 0.7,
                     alpha=1.0 if (highlight_heads is None or is_hl) else 0.2,
-                    label=f"L{layer}H{head}" if is_hl else None)
+                    label=label)
     ax.axhline(0.5, color="grey", linestyle="--", linewidth=0.8, label="Circuit threshold (0.5)")
     ax.set_xlabel("Training step", fontsize=LABEL_FONTSIZE)
     ax.set_ylabel("Induction score", fontsize=LABEL_FONTSIZE)

@@ -1,0 +1,23 @@
+\section{Limitations}
+\label{sec:limitations}
+
+\textbf{Model scope.}
+All experiments use a 2-layer attention-only transformer.
+Claims are scoped to this model class; production models with MLP layers may differ.
+
+\textbf{Circuit threshold.}
+The attribution threshold of 0.5 is arbitrary.
+Raw scores are reported in all figures to allow alternative thresholds.
+
+\textbf{Token budget.}
+500K tokens may not capture changes emerging at larger budgets.
+
+\textbf{Dataset representativeness.}
+Results may differ for other programming languages or narrower Python subsets.
+
+\textbf{Causal completeness.}
+Activation patching measures total head contribution; sub-head decomposition
+(individual attention patterns vs.\ full output) is not performed.
+
+\textbf{Three seeds.}
+Five or more seeds would yield tighter confidence intervals.

@@ -1,0 +1,57 @@
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Model}
+We use the \texttt{attn-only-2l} pretrained model from
+TransformerLens~\citep{nanda2022transformerlens}: 2 layers, 8 heads,
+$d_\text{model}=256$, $d_\text{head}=32$, GPT-2 tokenizer.
+This model class has no MLP layers, ensuring all information flow passes through
+attention heads and the residual stream.
+
+\subsection{Fine-Tuning Setup}
+AdamW optimiser, $lr=2\times10^{-5}$, cosine decay with 5\% warmup,
+batch size 16, sequence length 128, 500K tokens total.
+Checkpoints and induction scores saved every 100 steps.
+Three seeds: 42, 123, 7.
+
+\subsection{Induction Score}
+Following \citet{olsson2022context}, for repeated-token sequence
+$[t_1,\ldots,t_n,\,t_1,\ldots,t_n]$:
+\begin{equation}
+  \text{IS}(l,h) = \frac{1}{n}\sum_{i=1}^{n} A^{(l,h)}[n+i,\;i]
+  \label{eq:is}
+\end{equation}
+where $A^{(l,h)}[q,k]$ is the attention weight at query position $q$, key $k$.
+Averaged over $n=500$ sequences with half-length 50.
+Change $\geq 0.1$ is treated as practically meaningful (a priori, not adjusted post-hoc).
+
+\subsection{Activation Patching Protocol}
+\begin{enumerate}[leftmargin=*,noitemsep]
+  \item \textbf{Clean run:} forward pass on repeated-token sequences.
+  \item \textbf{Corrupted run:} second half of each sequence randomly shuffled.
+  \item \textbf{Patch:} replace head $(l,h)$ output in corrupted run with clean value.
+  \item \textbf{Attribution:}
+    $\text{Attr}(l,h) = (\Delta_\text{patched} - \Delta_\text{corrupted})
+    / (\Delta_\text{clean} - \Delta_\text{corrupted})$
+\end{enumerate}
+Heads with $\text{Attr}(l,h) \geq 0.5$ are in the circuit (stated a priori).
+
+\subsection{Datasets}
+\textbf{Primary:} \texttt{codeparrot/github-code}, Python subset (streamed).\\
+\textbf{Control:} \texttt{roneneldan/TinyStories} (mandatory; without it no domain-shift
+claim is possible).
+
+\subsection{Metrics at Every Checkpoint}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Metric & Description & Shape \\
+\midrule
+$\text{IS}$ & Per-head induction score (Eq.~\ref{eq:is}) & $[L, H]$ \\
+$\Delta\text{IS}$ & Change from step-0 baseline & $[L, H]$ \\
+$\mathcal{L}$ & Training cross-entropy loss & scalar \\
+$\text{CodeICL}$ & Code copy-pattern accuracy & scalar \\
+$\text{Attr}$ & Activation-patching attribution & $[L, H]$ \\
+\bottomrule
+\end{tabular}
+\end{center}

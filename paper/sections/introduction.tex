@@ -1,0 +1,38 @@
+\section{Introduction}
+
+Fine-tuning is the dominant method for adapting large language models to downstream
+tasks and deployment contexts.
+Yet the internal computational structures that form during pre-training---the
+\emph{circuits} that implement specific algorithmic capabilities---are rarely monitored
+during fine-tuning.
+If safety-relevant circuits degrade or reorganise through this process, the resulting
+model may pass capability benchmarks while having silently lost properties that were
+present in the base model.
+
+Induction heads provide a concrete, well-characterised target for this investigation.
+\citet{olsson2022context} showed that a two-head circuit---a previous-token head in
+layer~0 that copies information into the residual stream, followed by an induction head
+in layer~1 that reads it---is responsible for the majority of in-context learning
+behaviour in small transformers.
+This circuit is mechanistically understood: its causal role has been verified via
+activation patching~\citep{conmy2023automated}, and it is present across a wide range
+of architectures and scales~\citep{elhage2021mathematical}.
+
+\textbf{Our question:} Does this circuit survive fine-tuning on a narrow distribution,
+and if it degrades or reorganises, at what training step does the transition occur---and
+what replaces it?
+
+This question has direct safety implications.
+If the induction circuit degrades during fine-tuning, fine-tuned models may lose
+in-context learning abilities not captured by standard benchmarks.
+
+\textbf{Contributions:}
+\begin{itemize}[leftmargin=*]
+  \item We replicate the induction circuit in \texttt{attn-only-2l} and verify its
+    causal role via activation patching.
+  \item We fine-tune on 500K tokens of Python code (primary) and TinyStories prose
+    (mandatory control), saving checkpoints every 100 steps across three seeds.
+  \item We report when induction score changes exceed $0.1$, and provide per-step
+    attribution scores at every checkpoint.
+  \item We release an interactive dashboard and full codebase for reproduction.
+\end{itemize}

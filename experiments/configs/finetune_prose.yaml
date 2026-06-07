@@ -1,0 +1,41 @@
+run_name: "prose_seed42"
+description: >
+  Fine-tune attn-only-2l on TinyStories prose.
+  MANDATORY control condition per AGENT_INSTRUCTIONS Section 4.4.
+  Without this run, no domain-shift claim can be made.
+
+model:
+  architecture: "attention-only"
+  num_layers: 2
+  num_heads: 8
+  d_model: 256
+  d_head: 32
+  source: "attn-only-2l"
+  tokenizer: "gpt2"
+
+train:
+  dataset: "roneneldan/TinyStories"
+  dataset_subset: null
+  max_tokens: 500000
+  seq_length: 128
+  batch_size: 16
+  optimizer: "AdamW"
+  lr: 2.0e-5
+  lr_schedule: "cosine"
+  warmup_fraction: 0.05
+  weight_decay: 0.01
+  checkpoint_every: 100
+  induction_eval_every: 100
+  induction_num_sequences: 500
+  induction_seq_length: 50
+  seed: 42
+  checkpoint_dir: "checkpoints"
+  results_dir: "experiments/results"
+
+additional_seeds: [123, 7]
+
+eval:
+  induction_seq_length: 50
+  induction_num_sequences: 500
+  induction_circuit_threshold: 0.5
+  seed: 42

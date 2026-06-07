@@ -1,6 +1,6 @@
 # Mechanistic Interpretability Study: Induction Circuit Stability Under Fine-Tuning
 
-[![CI](https://github.com/your-org/mech-interp-induction/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/mech-interp-induction/actions)
+[![CI](https://github.com/Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning/actions/workflows/ci.yml/badge.svg)](https://github.com/Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning/actions)
 
 A rigorous mechanistic interpretability study tracking whether induction head
 circuits in a 2-layer attention-only transformer survive fine-tuning on Python

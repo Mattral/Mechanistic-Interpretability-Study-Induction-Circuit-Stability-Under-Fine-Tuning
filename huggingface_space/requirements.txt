@@ -1,0 +1,6 @@
+gradio==4.37.2
+onnxruntime==1.18.1
+transformers==4.42.0
+numpy==1.26.4
+matplotlib==3.9.0
+torch==2.3.1

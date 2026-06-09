@@ -9,22 +9,28 @@ description = "Induction circuit stability under fine-tuning"
 requires-python = ">=3.10"
 
 [tool.black]
-line-length = 99
+line-length = 88
 target-version = ["py310"]
 
 [tool.ruff]
-line-length = 99
+line-length = 88
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501"]
+select = ["E", "F", "I", "N", "UP"]
+ignore = []
 
 [tool.mypy]
 python_version = "3.10"
+strict = true
 ignore_missing_imports = true
+warn_return_any = false
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
+
+[tool.isort]
+profile = "black"

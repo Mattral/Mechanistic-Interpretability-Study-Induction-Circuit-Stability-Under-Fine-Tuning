@@ -1,15 +1,19 @@
-\documentclass[10pt,twocolumn]{article}
+\documentclass{article}
 
-\usepackage[margin=0.75in]{geometry}
+% --- NeurIPS-style single-column layout ---
+\usepackage[margin=1.25in]{geometry}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{microtype}
-\usepackage{natbib}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{subcaption}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{enumitem}
+\usepackage{parskip}
 
 \hypersetup{
   colorlinks=true,
@@ -27,6 +31,7 @@ A Mechanistic Interpretability Study}}
 \begin{document}
 
 \maketitle
+
 \input{sections/abstract}
 \input{sections/introduction}
 \input{sections/background}

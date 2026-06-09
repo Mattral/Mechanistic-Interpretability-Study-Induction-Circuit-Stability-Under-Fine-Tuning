@@ -6,6 +6,15 @@ This repository contains a rigorous, reproducible mechanistic interpretability s
 
 *If you are interested in AI safety, mechanistic alignment, or tracking phase changes in neural networks under the hood, this project is for you.*
 
+<div align="center">
+  <a href="https://huggingface.co/spaces/Mattral/induction-circuit-stability" target="_blank">
+    <img src="ICSUFT.png" alt="Induction Circuit Stability Dashboard" width="800">
+  </a>
+  <p>
+    <b>Interactive Dashboard:</b> <a href="https://huggingface.co/spaces/Mattral/induction-circuit-stability">Try it live on Hugging Face Spaces</a>
+  </p>
+</div>
+
 ---
 
 ## 📖 Experimental Design & Core Questions

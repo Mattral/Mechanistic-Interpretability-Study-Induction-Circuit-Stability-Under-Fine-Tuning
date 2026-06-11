@@ -138,3 +138,34 @@ and index formula.
 Expected result: L1H6 IS ~ 0.9+ (consistent with Olsson et al. 2022 Fig. 4).
 All three circuit analysis notebooks (01, 02, 04) must be re-run from scratch.
 
+---
+
+## DECISION-006: attn-only-2l uses NeelNanda/gpt-neox-tokenizer-digits, NOT gpt2
+
+**Date:** 2026-06
+**Status:** Decided — confirmed by live HF Space error
+
+**Context:** The ONNX export and dashboard were loading `gpt2` as the tokenizer.
+The attn-only-2l pretrained model in TransformerLens uses
+`NeelNanda/gpt-neox-tokenizer-digits` (vocab_size ≈ 48262), not the GPT-2
+tokenizer (vocab_size = 50257). Feeding GPT-2 token IDs to a neox-tokenizer
+ONNX model produces completely wrong token mappings, leading to garbled
+attention patterns and meaningless induction scores in the dashboard.
+
+**Evidence:** The HF Space produced incorrect outputs with gpt2. Switching to
+`NeelNanda/gpt-neox-tokenizer-digits` fixed the dashboard (confirmed by
+@Mattral in live testing).
+
+**Decision:** All tokenizer loads across the codebase now use
+`NeelNanda/gpt-neox-tokenizer-digits`:
+  - `src/model/config.py`: ModelConfig.tokenizer default
+  - `src/model/finetune.py`: via model_config.tokenizer
+  - `src/viz/dashboard/app.py`: local dashboard
+  - `src/viz/dashboard/onnx_export.py`: ONNX export
+  - `huggingface_space/app.py`: HF Space dashboard
+
+**Consequences:** The ONNX export must be re-run after any change to tokenizer
+configuration. Notebooks 01-04 that use the tokenizer must be re-run with this
+fix. The HF Space ONNX models in `onnx_models/` remain valid (they were
+exported with the model itself, not with gpt2).
+

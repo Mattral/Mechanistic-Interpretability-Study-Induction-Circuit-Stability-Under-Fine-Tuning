@@ -14,5 +14,4 @@ pytest==8.2.2
 black==24.4.2
 ruff==0.4.10
 mypy==1.10.1
-jaxtyping==0.2.38
-typeguard==4.5.2
+einops==0.8.0

@@ -46,5 +46,5 @@ Inference per input: **< 500 ms**.
 
 ## Links
 
-- GitHub: [your-org/mech-interp-induction](https://github.com/your-org/mech-interp-induction)
+- GitHub: [Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning](https://github.com/Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning)
 - Paper: [ArXiv link TBD]

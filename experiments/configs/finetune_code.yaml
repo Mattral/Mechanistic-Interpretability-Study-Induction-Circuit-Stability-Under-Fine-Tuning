@@ -13,8 +13,8 @@ model:
   tokenizer: "gpt2"
 
 train:
-  dataset: "codeparrot/github-code"
-  dataset_subset: "Python-all"
+  dataset: "transformersbook/codeparrot"
+  dataset_subset: null  # transformersbook/codeparrot has no subsets; text_column='content'
   max_tokens: 500000
   seq_length: 128
   batch_size: 16

@@ -7,14 +7,30 @@ By measuring per-head induction scores and activation-patching attribution at ev
 100-step checkpoint across both a code and a prose condition, we provide a replicable
 methodology for circuit-level monitoring during fine-tuning.
 
-\textbf{[SUMMARY PENDING EXPERIMENTAL RESULTS]}
+\textbf{Summary (preliminary, seed 42).} The induction circuit in
+\texttt{attn-only-2l} consists of a single head, L1H6 (prefix-matching score
+$0.408 \pm 0.103$, attribution $0.952$), consistent with prior
+characterisations of this model. Under both Python code and TinyStories
+prose fine-tuning, this head's prefix-matching score \emph{increased} over
+244 steps---from $0.408$ to $0.650$ (code) and to $0.617$ (prose)---with the
+largest change occurring in the first 100 steps in both conditions. At this
+token budget and for this seed, we find no evidence of circuit dissolution;
+if anything, fine-tuning reinforces this head's prefix-matching behaviour
+regardless of domain. Confirming this across the remaining two seeds
+(123, 7, already trained but not yet swept) is the immediate next step.
 
 The interactive visualisation dashboard and full codebase are released alongside this
 paper, enabling practitioners to apply circuit-level monitoring to their own
 fine-tuning pipelines.
 
 \textbf{Future work.}
-(1)~Extend to GPT-2 small (with MLP layers) using automated circuit
+(1)~Complete the 3-seed sweep for both conditions to confirm the
+reinforcement direction and obtain confidence intervals.
+(2)~Extend the token budget beyond 500K to test whether the apparent
+plateau between steps 100 and 200 continues, reverses, or accelerates.
+(3)~Extend to GPT-2 small (with MLP layers) using automated circuit
 discovery~\citep{conmy2023automated}.
-(2)~Investigate circuit-targeted regularisation during fine-tuning to preserve
-induction circuit integrity while maintaining task performance.
+(4)~Investigate whether reinforcement of prefix-matching behaviour during
+fine-tuning has any measurable effect on susceptibility to
+repetition-based or prompt-injection attacks that exploit induction-like
+heuristics.

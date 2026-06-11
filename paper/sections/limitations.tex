@@ -1,6 +1,25 @@
 \section{Limitations}
 \label{sec:limitations}
 
+\textbf{Single seed analysed.}
+All fine-tuning results reported in Section~\ref{sec:results} are from seed
+42 only. Seeds 123 and 7 were trained (checkpoints exist for both conditions)
+but not yet swept and analysed at the time of writing. The reported deltas
+($+0.194$/$+0.048$ for code, $+0.175$/$+0.034$ for prose) should be treated
+as a single-seed preliminary observation pending confirmation; no
+$\pm 1$ SD across seeds is yet available for the fine-tuning trajectories
+(unlike the baseline induction score, which is averaged over 100 sequences
+and does carry a standard deviation, $0.408 \pm 0.103$).
+
+\textbf{Three checkpoints per run.}
+With \texttt{checkpoint\_every=100} and 244 total steps (500K tokens at
+batch size 16, sequence length 128), each run produces checkpoints at steps
+0, 100, and 200---three points per trajectory. The Savitzky-Golay smoothing
+window used for phase detection (DECISION-004, window$=5$) exceeds this
+series length and falls back to raw consecutive differences. A longer token
+budget or more frequent checkpointing would allow genuine smoothing and a
+finer-grained transition analysis.
+
 \textbf{Model scope.}
 All experiments use a 2-layer attention-only transformer.
 Claims are scoped to this model class; production models with MLP layers may differ.
@@ -10,14 +29,26 @@ The attribution threshold of 0.5 is arbitrary.
 Raw scores are reported in all figures to allow alternative thresholds.
 
 \textbf{Token budget.}
-500K tokens may not capture changes emerging at larger budgets.
+500K tokens may not capture changes emerging at larger budgets; the
+front-loaded transition pattern observed here (most change in the first 100
+steps) raises the question of whether longer runs would show further change,
+a plateau, or reversal.
 
 \textbf{Dataset representativeness.}
-Results may differ for other programming languages or narrower Python subsets.
+Results may differ for other programming languages, narrower Python subsets,
+or other prose corpora.
 
 \textbf{Causal completeness.}
 Activation patching measures total head contribution; sub-head decomposition
 (individual attention patterns vs.\ full output) is not performed.
 
-\textbf{Three seeds.}
-Five or more seeds would yield tighter confidence intervals.
+\textbf{Adversarial probe edge case.}
+The \texttt{all\_same\_token} probe (Figure~\ref{fig:adv}) produces a
+normalised logit difference of $2.35$, exceeding the clean baseline of
+$1.0$. We interpret this as a degenerate case: when every token in the
+sequence is identical, the prefix-matching pattern is trivially satisfied at
+every position, and the normalisation (which divides by a clean-vs-corrupted
+logit difference computed on non-degenerate sequences) does not account for
+this. This probe result should not be read as evidence the fine-tuned model
+exceeds "clean" induction performance in any meaningful sense; it reflects a
+limitation of the normalisation scheme on degenerate inputs.

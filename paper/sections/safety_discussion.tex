@@ -2,17 +2,33 @@
 \label{sec:safety}
 
 The induction circuit is fundamental to in-context learning~\citep{olsson2022context}.
-If fine-tuning on a narrow distribution degrades this circuit, deployed fine-tuned
-models may exhibit reduced in-context generalisation outside their target domain---a
-property standard capability benchmarks do not measure.
+A common a priori concern is that fine-tuning on a narrow distribution might
+\emph{degrade} this circuit, causing deployed fine-tuned models to lose
+in-context generalisation outside their target domain---a property standard
+capability benchmarks do not measure.
 
-\textbf{Implication for fine-tuning safety evaluations:} Our results
-(\textbf{pending}) suggest induction scores should be included alongside capability
-benchmarks when evaluating fine-tuned models.
-A model that passes benchmarks but shows degraded induction scores may be less robust
-to novel in-context prompts encountered in deployment.
+\textbf{Implication for fine-tuning safety evaluations.}
+Our preliminary result (Section~\ref{sec:results}) does not support the
+degradation hypothesis at this token budget: L1H6's prefix-matching score
+\emph{increased} under both code ($+0.194$ at step 100, $+0.242$ cumulative
+by step 200) and prose ($+0.175$ at step 100, $+0.209$ cumulative) fine-tuning.
+If this preliminary finding holds across the remaining seeds, it would
+suggest that short-horizon fine-tuning on the distributions tested here is
+more likely to \emph{reinforce} prefix-matching behaviour than to silently
+erode it. This is itself a safety-relevant finding: a model that becomes
+\emph{more} reliant on a simple copy-based heuristic after fine-tuning may be
+more susceptible to prompt-injection or repetition-based attacks that exploit
+that heuristic, even as it appears unchanged or improved on standard
+benchmarks. Either direction of change---degradation or reinforcement---is
+invisible to capability benchmarks alone, which is the core argument for
+including circuit-level diagnostics in fine-tuning evaluations regardless of
+which direction the change turns out to go.
 
-Additionally, if phase transitions in circuit metrics occur during fine-tuning,
-standard early-stopping criteria based on validation loss may not capture circuit
-degradation---a training run can lower loss while simultaneously restructuring safety-
-relevant computational mechanisms.
+\textbf{Phase transitions and early stopping.}
+The detected transition occurs predominantly in the first 100 of 244 steps
+in both conditions, with comparatively little further change between steps
+100 and 200. If this front-loaded pattern generalises, it implies that
+circuit-level monitoring is most informative early in a fine-tuning run, and
+that validation-loss-based early stopping criteria---which are insensitive to
+attention-pattern changes---would not by themselves indicate whether or when
+such a change has occurred.

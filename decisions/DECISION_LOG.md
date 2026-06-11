@@ -479,3 +479,47 @@ thanks to the auto-fallback) will now correctly highlight L1H6 in fig5/fig6
 with full opacity, linewidth=2.0, and a legend entry, using the existing
 sweep data (which already correctly contains L1H6's trajectory regardless of
 the stale circuit_heads list).
+
+---
+
+## DECISION-013: Replace codeparrot/github-code with transformersbook/codeparrot
+
+**Date:** 2026-06-14
+**Status:** Decided — confirmed by Colab T4 crash (notebook 03, code fine-tuning)
+
+**Context:** `codeparrot/github-code` uses a legacy loading script
+(`github-code.py`). The HuggingFace `datasets` library removed support for
+loading scripts in version 4.0.0:
+```
+RuntimeError: Dataset scripts are no longer supported, but found github-code.py
+```
+DECISION-008's `trust_remote_code=True` was also removed from the `datasets`
+4.0 API entirely and no longer has any effect. Both fixes are now moot.
+
+**Decision:** Replace `codeparrot/github-code` with
+`transformersbook/codeparrot`:
+- Parquet format, no loading script — works with any `datasets` version
+- Python-only (no subset name needed; set `dataset_subset=None`)
+- Text column: `"content"` (not `"code"` as in codeparrot/github-code)
+- Same source: GitHub BigQuery Python files (22M files, ~180 GB)
+- No authentication required, freely streamable
+
+**Changes:**
+1. `src/model/config.py`: `dataset` default changed to
+   `"transformersbook/codeparrot"`, `dataset_subset` changed to `None`
+2. `src/model/finetune.py`: `text_column="code"` → `text_column="content"`;
+   `trust_remote_code=True` removed entirely
+3. `experiments/configs/finetune_code.yaml`: dataset and subset updated
+4. `paper/sections/methods.tex`: dataset citation and rationale updated
+5. `README.md`: dataset reference updated
+
+**Consequences:** Re-run notebooks 03, 04, and 05 from this version.
+The prose control (`roneneldan/TinyStories`) is unaffected — it has no
+loading script and works with any `datasets` version.
+
+**Note:** The previous CPU-based fine-tuning run (seed 42 only, code +
+prose, checkpoints at steps 0/100/200) was completed with the old dataset
+configuration (when it ran on CPU it used an older session where
+`trust_remote_code=True` still worked). Any re-run from v8 with T4 GPU
+will use `transformersbook/codeparrot` instead. For strict reproducibility,
+this dataset change is noted in the paper methods section.

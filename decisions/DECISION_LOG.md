@@ -523,3 +523,43 @@ configuration (when it ran on CPU it used an older session where
 `trust_remote_code=True` still worked). Any re-run from v8 with T4 GPU
 will use `transformersbook/codeparrot` instead. For strict reproducibility,
 this dataset change is noted in the paper methods section.
+
+---
+
+## DECISION-014: torch.load weights_only=True for PyTorch>=2.6 compatibility
+
+**Date:** 2026-06-14
+**Status:** Decided — confirmed by Colab T4 crash (notebook 04, sweep_checkpoints)
+
+**Context:** PyTorch 2.6 changed `torch.load`'s `weights_only` argument
+default from `False` to `True`. Our `save_checkpoint()` stored
+`"torch_version": torch.__version__`, where `torch.__version__` is a
+`TorchVersion` object (not a plain Python `str`). PyTorch 2.6 with
+`weights_only=True` rejects any non-allowlisted global — including
+`TorchVersion` — and raises:
+```
+UnpicklingError: Unsupported global: GLOBAL torch.torch_version.TorchVersion
+```
+
+**Decision — two changes to `src/model/train.py`:**
+
+1. `save_checkpoint()`: cast `torch.__version__` to `str()` explicitly:
+   ```python
+   "torch_version": str(torch.__version__),
+   ```
+   New checkpoints now store a plain Python `str`, which is safe under
+   `weights_only=True` with no allowlisting required.
+
+2. `load_checkpoint()`: robust two-stage loading:
+   - Try `torch.load(..., weights_only=True)` first (safe, correct default).
+   - On any exception (catches `UnpicklingError` for old checkpoints that
+     contain `TorchVersion` objects), log a warning and retry with
+     `weights_only=False`. This handles all existing checkpoints from the
+     current experimental runs without requiring them to be regenerated.
+
+**Consequences:**
+- Old checkpoints (from previous runs in this session) load correctly
+  via the fallback path, with a visible warning in the log.
+- New checkpoints (from re-runs after v8 push) are safe with
+  `weights_only=True` and will not trigger the fallback.
+- `onnx_export.py` calls `load_checkpoint()` — already fixed transitively.

@@ -106,3 +106,35 @@ so a 0.1 change represents a meaningful fraction (~12%) of the dynamic range.
 the paper. Any transition below 0.1 is not reported as structurally significant.
 
 ---
+
+---
+
+## DECISION-005: prepend_bos=False in all run_with_cache calls
+
+**Date:** 2026-06
+**Status:** Decided — confirmed by experimental data (Notebooks 01 & 02)
+
+**Context:** TransformerLens prepends a BOS token by default
+(`default_prepend_bos=True`). This shifts all attention position indices
+by +1, corrupting the induction score formula IS[l,h] = mean_i(A[n+i, i]).
+
+**Evidence from experiments:** The pretrained attn-only-2l model produced
+induction scores near zero (max=0.28 at L0H7) while activation patching
+correctly identified L1H6 as the induction head with attribution=0.95.
+Since attribution uses logit differences (not attention positions), it was
+unaffected by the BOS offset. The discrepancy proved the IS formula was
+reading the wrong positions.
+
+**Decision:** Pass `prepend_bos=False` to every `run_with_cache()` call in
+`src/circuits/` so the attention matrix dimensions are exactly [batch, n_heads,
+2n, 2n] and position n+i correctly refers to the second occurrence of token i.
+
+**Alternative considered:** Adjust indices to n+1+i (key) and i+1 (query) to
+account for BOS. Rejected because it makes the code harder to verify against
+the formula in the paper and introduces asymmetry between sequence construction
+and index formula.
+
+**Consequences:** All IS scores will now be recomputed with the correct formula.
+Expected result: L1H6 IS ~ 0.9+ (consistent with Olsson et al. 2022 Fig. 4).
+All three circuit analysis notebooks (01, 02, 04) must be re-run from scratch.
+

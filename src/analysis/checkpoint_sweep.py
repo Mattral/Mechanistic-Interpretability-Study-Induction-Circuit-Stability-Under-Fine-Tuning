@@ -67,6 +67,7 @@ def sweep_checkpoints(
     eval_config: EvalConfig,
     output_path: Path,
     device: Optional[str] = None,
+    tokenizer: Optional[object] = None,
 ) -> dict:  # type: ignore[type-arg]
     """Load all step_*.pt checkpoints and compute all 8 circuit metrics for each.
 
@@ -76,6 +77,8 @@ def sweep_checkpoints(
         eval_config: EvalConfig with metric computation parameters.
         output_path: Path to save the sweep results (.npz).
         device: Torch device. Auto-detected if None.
+        tokenizer: Optional HuggingFace tokenizer for code_icl_score computation.
+            When None, code_icl_score is recorded as NaN with a logged warning.
 
     Returns:
         Dict with numpy arrays: steps, train_losses, induction_scores,
@@ -155,7 +158,12 @@ def sweep_checkpoints(
         # Metric 5: code_icl_score (lightweight proxy without tokenizer)
         # Full ICL requires tokenizer; here we compute a vocabulary-level proxy
         # The full version is computed in finetune.py where the tokenizer is available
-        code_icl = float(0.0)  # populated by finetune.py; kept as placeholder here
+        # No tokenizer available — record NaN and warn; caller should pass tokenizer=
+        logger.warning(
+            "code_icl_score skipped at step %d: pass tokenizer= to get real values.",
+            payload.get("step", -1),
+        )
+        code_icl = float("nan")
 
         # Metric 8: circuit_attribution
         attr = compute_circuit_attribution(

@@ -1,16 +1,27 @@
 """Induction score metric — canonical Olsson et al. (2022) definition.
 
-For a repeated-token sequence [t_1,...,t_n, t_1,...,t_n], the induction score
-for head (l,h) is the mean attention weight A^(l,h)[n+i, i] averaged over all
-positions i in [0,n-1] and all sequences. This definition must not be altered.
+For a repeated-token sequence [t_1,...,t_n, t_1,...,t_n] (length n each
+half, 2n total), the induction score (prefix-matching score) for head
+(l,h) is the mean attention weight A^(l,h)[n+j, j+1] averaged over all
+j in [0, n-2] and all sequences — i.e. the average attention from the
+second occurrence of a token back to the position immediately AFTER its
+first occurrence (the token it is "copying"), normalised by (n-1).
 
-CRITICAL IMPLEMENTATION NOTE — BOS token:
-TransformerLens prepends a BOS token by default (prepend_bos=True), which
-shifts all position indices by +1 and corrupts the IS formula.
-We pass prepend_bos=False to run_with_cache so the sequence the model
-attends over is exactly [t_1,...,t_n, t_1,...,t_n] with no offset.
-This matches the Neel Nanda TransformerLens tutorial implementation.
-See decisions/DECISION_LOG.md DECISION-005.
+This is the formula given in Olsson et al. (2022): "its average attention
+from the source token x_i to the next token of its previous occurrence",
+with normalisation 1/(|x|-1). See DECISION-005 (REVISED) in
+decisions/DECISION_LOG.md for the full derivation and the off-by-one bug
+this fixes (the previous implementation read A[n+i, i], the attention to
+the SAME token as the first occurrence, rather than A[n+j, j+1], the
+attention to the token that FOLLOWS the first occurrence — which is what
+an induction head actually needs to copy).
+
+Implementation note — BOS token:
+Test sequences are constructed as raw integer tensors (torch.randint), not
+strings, so TransformerLens's tokenizer/BOS-prepending logic is never
+invoked for this code path; prepend_bos has no effect here. We still pass
+prepend_bos=False defensively and validate the cache shape is exactly
+[batch, n_heads, 2n, 2n], in case future callers pass string input.
 """
 from __future__ import annotations
 
@@ -31,25 +42,30 @@ def compute_induction_score(
     seed: int = 42,
     device: Optional[str] = None,
 ) -> Tensor:
-    """Compute per-head induction scores using repeated-token sequences.
+    """Compute per-head induction (prefix-matching) scores.
 
-    Uses prepend_bos=False to avoid BOS-token position offset that would
-    corrupt the A[n+i, i] index formula. See module docstring.
+    Uses repeated-token sequences [t_1,...,t_n, t_1,...,t_n] and reads
+    A[n+j, j+1] for j in [0, n-2] — the attention from the second
+    occurrence of a token back to the token that followed its first
+    occurrence. See module docstring for the full formula derivation.
 
     Args:
         model: A loaded HookedTransformer instance.
         sequence_length: Half-length n of each test sequence.
             Full sequence length is 2*sequence_length (no BOS).
+            Must be >= 2 (n-1 >= 1 valid (query, key) pairs).
         num_sequences: Number of random sequences to average over.
         seed: Random seed for reproducibility.
         device: Torch device. Inferred from model if None.
 
     Returns:
         Float tensor of shape [n_layers, n_heads]. Entry [l, h] is the
-        induction score for layer l, head h.
+        induction (prefix-matching) score for layer l, head h, in [0, 1].
 
     Raises:
         ValueError: If sequence_length < 2.
+        RuntimeError: If the cached attention pattern does not have the
+            expected shape [batch, n_heads, 2n, 2n].
     """
     if sequence_length < 2:
         raise ValueError(f"sequence_length must be >= 2, got {sequence_length}.")
@@ -69,13 +85,13 @@ def compute_induction_score(
         _, cache = model.run_with_cache(
             sequences,
             names_filter=lambda name: "hook_pattern" in name,
-            prepend_bos=False,   # ← CRITICAL: prevents BOS position offset
+            prepend_bos=False,
             return_type=None,
         )
 
     scores = torch.zeros(n_layers, n_heads, device=device)
 
-    # Validate cache shape — must be [batch, n_heads, 2n, 2n] (no BOS)
+    # Validate cache shape — must be [batch, n_heads, 2n, 2n]
     key0 = "blocks.0.attn.hook_pattern"
     if key0 in cache:
         expected_seq = 2 * sequence_length
@@ -83,16 +99,21 @@ def compute_induction_score(
         if actual_seq != expected_seq:
             raise RuntimeError(
                 f"Unexpected attention pattern seq length {actual_seq} "
-                f"(expected {expected_seq}). BOS token may still be prepended. "
-                "Check TransformerLens version and prepend_bos behaviour."
+                f"(expected {expected_seq}). Check TransformerLens version "
+                "and prepend_bos behaviour for the input type used."
             )
 
-    # IS formula: score[l,h] = mean_i( A^(l,h)[n+i, i] ) for i in [0, n-1]
-    # query positions: [n, n+1, ..., 2n-1]  (second copy of each token)
-    # key positions:   [0,  1,  ...,  n-1]  (first copy of each token)
+    # IS formula (Olsson et al. 2022, prefix-matching score):
+    #   score[l,h] = (1/(n-1)) * sum_{j=0}^{n-2} A^(l,h)[n+j, j+1]
+    #
+    # query positions: [n, n+1, ..., 2n-2]   -- second occurrence of t_0..t_{n-2}
+    # key positions:   [1, 2, ...,  n-1]     -- position of t_1..t_{n-1} in the
+    #                                            first copy (the token that
+    #                                            FOLLOWED the first occurrence
+    #                                            of the query's token)
     n = sequence_length
-    query_positions = torch.arange(n, 2 * n, device=device)
-    key_positions = torch.arange(0, n, device=device)
+    query_positions = torch.arange(n, 2 * n - 1, device=device)  # n-1 positions
+    key_positions = torch.arange(1, n, device=device)            # n-1 positions
 
     for layer in range(n_layers):
         attn_key = f"blocks.{layer}.attn.hook_pattern"
@@ -104,8 +125,8 @@ def compute_induction_score(
         attn = cache[attn_key]  # [batch, n_heads, 2n, 2n]
         for head in range(n_heads):
             head_attn = attn[:, head, :, :]  # [batch, 2n, 2n]
-            # Advanced indexing: reads A[batch, n+i, i] for each i
-            induction_weights = head_attn[:, query_positions, key_positions]  # [batch, n]
+            # Advanced indexing: reads A[batch, n+j, j+1] for each j
+            induction_weights = head_attn[:, query_positions, key_positions]  # [batch, n-1]
             scores[layer, head] = induction_weights.mean()
 
     logger.debug(
@@ -126,9 +147,9 @@ def compute_induction_score_with_stats(
 ) -> tuple[Tensor, Tensor]:
     """Compute induction scores with per-head standard deviations.
 
-    Same BOS fix as compute_induction_score. Std is computed across
-    sequences (after averaging over positions within each sequence),
-    providing error bars for paper figures.
+    Same formula as compute_induction_score (A[n+j, j+1], j in [0, n-2]).
+    Std is computed across sequences (after averaging over positions
+    within each sequence), providing error bars for paper figures.
 
     Args:
         model: A loaded HookedTransformer instance.
@@ -161,7 +182,7 @@ def compute_induction_score_with_stats(
         _, cache = model.run_with_cache(
             sequences,
             names_filter=lambda name: "hook_pattern" in name,
-            prepend_bos=False,   # ← CRITICAL: prevents BOS position offset
+            prepend_bos=False,
             return_type=None,
         )
 
@@ -169,15 +190,15 @@ def compute_induction_score_with_stats(
     stds = torch.zeros(n_layers, n_heads, device=device)
 
     n = sequence_length
-    query_positions = torch.arange(n, 2 * n, device=device)
-    key_positions = torch.arange(0, n, device=device)
+    query_positions = torch.arange(n, 2 * n - 1, device=device)  # n-1 positions
+    key_positions = torch.arange(1, n, device=device)            # n-1 positions
 
     for layer in range(n_layers):
         attn_key = f"blocks.{layer}.attn.hook_pattern"
         attn = cache[attn_key]  # [batch, n_heads, 2n, 2n]
         for head in range(n_heads):
             head_attn = attn[:, head, :, :]
-            induction_weights = head_attn[:, query_positions, key_positions]  # [batch, n]
+            induction_weights = head_attn[:, query_positions, key_positions]  # [batch, n-1]
             per_seq_score = induction_weights.mean(dim=1)  # [batch]
             means[layer, head] = per_seq_score.mean()
             stds[layer, head] = per_seq_score.std()

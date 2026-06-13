@@ -1,36 +1,40 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-We have presented the first systematic characterisation of induction circuit stability
-under fine-tuning in two-layer attention-only transformers.
-By measuring per-head induction scores and activation-patching attribution at every
-100-step checkpoint across both a code and a prose condition, we provide a replicable
-methodology for circuit-level monitoring during fine-tuning.
+We have characterised induction circuit stability under fine-tuning in a
+two-layer attention-only transformer, measuring per-head induction scores
+and activation-patching attribution at every checkpoint across both a Python
+code condition and a TinyStories prose control.
 
-\textbf{Summary (preliminary, seed 42).} The induction circuit in
-\texttt{attn-only-2l} consists of a single head, L1H6 (prefix-matching score
-$0.408 \pm 0.103$, attribution $0.952$), consistent with prior
-characterisations of this model. Under both Python code and TinyStories
-prose fine-tuning, this head's prefix-matching score \emph{increased} over
-244 steps---from $0.408$ to $0.650$ (code) and to $0.617$ (prose)---with the
-largest change occurring in the first 100 steps in both conditions. At this
-token budget and for this seed, we find no evidence of circuit dissolution;
-if anything, fine-tuning reinforces this head's prefix-matching behaviour
-regardless of domain. Confirming this across the remaining two seeds
-(123, 7, already trained but not yet swept) is the immediate next step.
+\textbf{Summary.} The pretrained \texttt{attn-only-2l} model contains a
+single-head induction circuit (L1H6: prefix-matching score $0.408 \pm 0.103$,
+attribution $0.952$, $12.4\times$ the next head). Under both fine-tuning
+conditions, this circuit \emph{strengthens} rather than degrades, reaching
+$0.638$ (code) and $0.616$ (prose) after 244 training steps. Trajectories
+are near-identical across domains; both exceed the $0.5$ IS threshold by
+step 100 and continue rising. Adversarial probes confirm the post-fine-tuning
+head is a stronger, selective induction mechanism: structure-preserving
+perturbations retain $0.944$ of the clean score; structure-removing probes
+drop to $0.132$. The degenerate \texttt{all\_same\_token} outlier decreases
+from $4.12$ to $2.41$ after fine-tuning.
 
-The interactive visualisation dashboard and full codebase are released alongside this
-paper, enabling practitioners to apply circuit-level monitoring to their own
-fine-tuning pipelines.
+The interactive visualisation dashboard and full codebase are released
+alongside this paper, enabling practitioners to apply circuit-level
+monitoring to their own fine-tuning pipelines.
+
+\textbf{Limitations of current results.} All fine-tuning results are from
+seed 42 only. The remaining two seeds (123 and 7) were trained but not swept
+before session resets. Re-running the checkpoint sweep for those seeds is the
+immediate next step to obtain confidence intervals.
 
 \textbf{Future work.}
-(1)~Complete the 3-seed sweep for both conditions to confirm the
-reinforcement direction and obtain confidence intervals.
-(2)~Extend the token budget beyond 500K to test whether the apparent
-plateau between steps 100 and 200 continues, reverses, or accelerates.
-(3)~Extend to GPT-2 small (with MLP layers) using automated circuit
-discovery~\citep{conmy2023automated}.
-(4)~Investigate whether reinforcement of prefix-matching behaviour during
-fine-tuning has any measurable effect on susceptibility to
-repetition-based or prompt-injection attacks that exploit induction-like
-heuristics.
+(1)~Complete the 3-seed sweep and add $\pm 1$ SD shading to Figures~5
+and~6 to confirm the reinforcement direction with statistical precision.
+(2)~Extend the token budget to test whether the score plateau between
+steps 100 and 200 continues, reverses, or accelerates at larger scale.
+(3)~Investigate whether the observed IS increase under code fine-tuning
+increases susceptibility to induction-based prompt injection, and whether
+it can be controlled via circuit-targeted regularisation.
+(4)~Extend to GPT-2 small (with MLP layers) using automated circuit
+discovery~\citep{conmy2023automated} to test whether the same reinforcement
+pattern holds in a model with non-attention computation.

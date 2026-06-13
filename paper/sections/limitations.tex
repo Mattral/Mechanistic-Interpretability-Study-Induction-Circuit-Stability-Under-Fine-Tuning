@@ -1,54 +1,62 @@
 \section{Limitations}
 \label{sec:limitations}
 
-\textbf{Single seed analysed.}
-All fine-tuning results reported in Section~\ref{sec:results} are from seed
-42 only. Seeds 123 and 7 were trained (checkpoints exist for both conditions)
-but not yet swept and analysed at the time of writing. The reported deltas
-($+0.194$/$+0.048$ for code, $+0.175$/$+0.034$ for prose) should be treated
-as a single-seed preliminary observation pending confirmation; no
-$\pm 1$ SD across seeds is yet available for the fine-tuning trajectories
-(unlike the baseline induction score, which is averaged over 100 sequences
-and does carry a standard deviation, $0.408 \pm 0.103$).
+\textbf{Single seed analysed (fine-tuning).}
+All fine-tuning trajectories (Figures~5--7, Tables~1--3) are from seed 42
+only. Seeds 123 and 7 were trained and checkpoints exist, but the checkpoint
+sweep could not be completed before Colab session resets. No $\pm 1$~SD
+confidence intervals are available for the IS trajectories; the $\Delta$ and
+IS values in Tables~1--3 should be treated as single-seed observations
+pending confirmation.
 
 \textbf{Three checkpoints per run.}
-With \texttt{checkpoint\_every=100} and 244 total steps (500K tokens at
-batch size 16, sequence length 128), each run produces checkpoints at steps
-0, 100, and 200---three points per trajectory. The Savitzky-Golay smoothing
-window used for phase detection (DECISION-004, window$=5$) exceeds this
-series length and falls back to raw consecutive differences. A longer token
-budget or more frequent checkpointing would allow genuine smoothing and a
-finer-grained transition analysis.
+With \texttt{checkpoint\_every=100} and 244 total steps, each run produces
+checkpoints at steps 0, 100, 200 only. The Savitzky-Golay smoothing window
+(window $= 5$) exceeds this series length and falls back to raw consecutive
+differences, limiting the granularity of phase-transition detection. More
+frequent checkpointing would allow finer-grained trajectory analysis.
+
+\textbf{Single-head circuit.}
+Only L1H6 exceeds the $\geq 0.5$ attribution threshold; no layer-0
+previous-token partner was identified. The canonical induction circuit
+in \citet{olsson2022context} consists of a previous-token head (layer 0)
+$+$ induction head (layer 1) pair. Our activation patching identifies the
+layer-1 head as the dominant causal component, but the absence of a
+confirmed layer-0 partner means the circuit topology is less complete than
+described in prior work. This may reflect the specific threshold choice or
+the pooled corruption used in patching.
 
 \textbf{Model scope.}
-All experiments use a 2-layer attention-only transformer.
-Claims are scoped to this model class; production models with MLP layers may differ.
+All results are from a 2-layer, attention-only transformer (no MLP layers).
+Claims are scoped to this model class; models with MLP layers, residual
+stream interventions via both attention and MLP, may show qualitatively
+different circuit stability properties.
+
+\textbf{Dataset change.}
+Between experimental sessions, the primary code dataset was changed from
+\texttt{codeparrot/github-code} to \texttt{transformersbook/codeparrot}
+due to a breaking change in the \texttt{datasets} library (DECISION-013).
+Both datasets derive from the same GitHub BigQuery source, but the subset
+filtering differs slightly. Strict reproducibility requires running
+notebook 03 with the v9 codebase.
 
 \textbf{Circuit threshold.}
-The attribution threshold of 0.5 is arbitrary.
-Raw scores are reported in all figures to allow alternative thresholds.
+The attribution threshold of $0.5$ (DECISION-002, stated a priori) is
+arbitrary. The IS threshold of $0.5$ shown in Figures~5 and~6 is a
+visualisation reference, not a hard criterion. Raw values are reported
+throughout to allow alternative thresholds.
 
 \textbf{Token budget.}
-500K tokens may not capture changes emerging at larger budgets; the
-front-loaded transition pattern observed here (most change in the first 100
-steps) raises the question of whether longer runs would show further change,
-a plateau, or reversal.
+500K tokens may not capture changes emerging at larger budgets. The apparent
+plateau between steps 100 and 200 ($\Delta = 0.054$ for code, $0.033$ for
+prose) raises the question of whether longer runs would continue, reverse,
+or accelerate the IS increase.
 
-\textbf{Dataset representativeness.}
-Results may differ for other programming languages, narrower Python subsets,
-or other prose corpora.
-
-\textbf{Causal completeness.}
-Activation patching measures total head contribution; sub-head decomposition
-(individual attention patterns vs.\ full output) is not performed.
-
-\textbf{Adversarial probe edge case.}
-The \texttt{all\_same\_token} probe (Figure~\ref{fig:adv}) produces a
-normalised logit difference of $2.35$, exceeding the clean baseline of
-$1.0$. We interpret this as a degenerate case: when every token in the
-sequence is identical, the prefix-matching pattern is trivially satisfied at
-every position, and the normalisation (which divides by a clean-vs-corrupted
-logit difference computed on non-degenerate sequences) does not account for
-this. This probe result should not be read as evidence the fine-tuned model
-exceeds "clean" induction performance in any meaningful sense; it reflects a
-limitation of the normalisation scheme on degenerate inputs.
+\textbf{Adversarial probe normalisation.}
+The \texttt{all\_same\_token} probe produces a normalised logit difference of
+$4.12$ (pre) and $2.41$ (post), both exceeding the clean baseline of $1.0$.
+This reflects a normalisation artefact: when every token is identical, every
+position trivially satisfies the prefix-matching criterion, making the
+numerator abnormally large. This result should not be interpreted as evidence
+of ``super-induction''; it is an artefact of the degenerate input
+distribution interacting with the normalisation scheme.

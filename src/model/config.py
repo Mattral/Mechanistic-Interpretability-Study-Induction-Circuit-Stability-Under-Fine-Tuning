@@ -16,8 +16,8 @@ class ModelConfig:
     architecture: str = "attention-only"
     num_layers: int = 2
     num_heads: int = 8
-    d_model: int = 256
-    d_head: int = 32
+    d_model: int = 512
+    d_head: int = 64
     source: str = "attn-only-2l"
     tokenizer: str = "NeelNanda/gpt-neox-tokenizer-digits"
     act_fn: Optional[str] = None
@@ -35,7 +35,7 @@ class TrainConfig:
     """Hyperparameters for the fine-tuning training loop."""
     # Data
     dataset: str = "codeparrot/github-code"
-    dataset_subset: str = "Python"
+    dataset_subset: str = "Python-all"
     max_tokens: int = 500_000
     seq_length: int = 128
     batch_size: int = 16

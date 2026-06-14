@@ -25,6 +25,8 @@ venv/
 #   ONNX models:        Run src/viz/dashboard/onnx_export.py after checkpoints exist.
 #   DVC (future):       `dvc pull` will fetch all outputs once DVC remote is configured.
 checkpoints/
+experiments/results/
+paper/figures/
 src/viz/dashboard/onnx_models/
 
 # DVC (data version control)

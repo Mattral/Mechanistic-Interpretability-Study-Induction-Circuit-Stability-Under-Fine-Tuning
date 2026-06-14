@@ -32,12 +32,15 @@ degrades or reorganises, at what training step does the transition occur?
   \item We fine-tune on 500K tokens of Python code (primary) and TinyStories
     prose (mandatory control), saving checkpoints every 100 steps and computing
     all eight circuit metrics from Section~\ref{sec:methods} at each checkpoint.
-  \item \textbf{[FINDING PENDING]} We find that \emph{[specific quantitative
-    observation: e.g., head $(1, h)$ induction score decreases from $X$ to $Y$
-    ($\pm\sigma$) by step $T$ under code fine-tuning but not prose
-    fine-tuning]}---a result not reported in any prior work---which implies that
-    safety evaluations for fine-tuned models must include circuit-level
-    diagnostics to detect silent degradation of in-context learning mechanisms.
+  \item \textbf{Preliminary finding (seed 42; 3 checkpoints).} We find that
+    the L1H6 induction circuit's prefix-matching score \emph{increases} under
+    both code and prose fine-tuning ($0.408 \to 0.602 \to 0.650$ for code;
+    $0.408 \to 0.583 \to 0.617$ for prose, over steps $0/100/200$)---a result
+    not reported in any prior work---which implies that fine-tuning on a
+    narrow distribution does not necessarily erode the induction circuit, and
+    that safety evaluations for fine-tuned models should include circuit-level
+    diagnostics to detect such changes (whether degradation or reinforcement)
+    rather than assuming degradation by default.
   \item We release a fully reproducible codebase with interactive dashboard
     (Hugging Face Spaces) and all experiment configs.
 \end{itemize}

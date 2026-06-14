@@ -45,7 +45,8 @@ class TokenisedStreamDataset(IterableDataset):  # type: ignore[type-arg]
     """Stream a HuggingFace dataset, tokenise on-the-fly, yield fixed-length chunks.
 
     Args:
-        hf_dataset_name: HuggingFace dataset identifier.
+        hf_dataset_name: HuggingFace dataset identifier (must be Parquet-based;
+            loading-script datasets are not supported in datasets>=4.0).
         hf_subset: Optional dataset subset / configuration name.
         tokenizer: A loaded HuggingFace tokenizer.
         seq_length: Number of tokens per yielded chunk.
@@ -78,7 +79,6 @@ class TokenisedStreamDataset(IterableDataset):  # type: ignore[type-arg]
             self.hf_subset,
             split="train",
             streaming=True,
-            trust_remote_code=True,
         ).shuffle(seed=self.seed, buffer_size=1000)
         buffer: list[int] = []
         tokens_yielded = 0
@@ -98,11 +98,17 @@ class TokenisedStreamDataset(IterableDataset):  # type: ignore[type-arg]
 
 
 def build_code_dataloader(config: TrainConfig, tokenizer: AutoTokenizer) -> DataLoader:  # type: ignore[type-arg]
-    """DataLoader for Python code fine-tuning (codeparrot/github-code).
+    """DataLoader for Python code fine-tuning (transformersbook/codeparrot).
+
+    Uses `transformersbook/codeparrot` (Parquet, no loading script) rather
+    than `codeparrot/github-code` which relies on a legacy loading script
+    (github-code.py) incompatible with datasets>=4.0 (DECISION-013).
+    Both derive from the same GitHub BigQuery source; the distribution of
+    Python files is equivalent for the purposes of this experiment.
 
     Args:
         config: TrainConfig with dataset and tokenization settings.
-        tokenizer: Pre-loaded GPT-2 tokenizer.
+        tokenizer: Pre-loaded neox tokenizer.
 
     Returns:
         A DataLoader for the code fine-tuning run.
@@ -113,7 +119,7 @@ def build_code_dataloader(config: TrainConfig, tokenizer: AutoTokenizer) -> Data
         tokenizer=tokenizer,
         seq_length=config.seq_length,
         max_tokens=config.max_tokens,
-        text_column="code",
+        text_column="content",   # transformersbook/codeparrot uses "content"
         seed=config.seed,
     )
     return DataLoader(dataset, batch_size=config.batch_size)

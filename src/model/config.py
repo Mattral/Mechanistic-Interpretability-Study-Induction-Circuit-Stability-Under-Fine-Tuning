@@ -34,8 +34,8 @@ class ModelConfig:
 class TrainConfig:
     """Hyperparameters for the fine-tuning training loop."""
     # Data
-    dataset: str = "codeparrot/github-code"
-    dataset_subset: str = "Python-all"
+    dataset: str = "transformersbook/codeparrot"
+    dataset_subset: Optional[str] = None  # transformersbook/codeparrot has no subsets
     max_tokens: int = 500_000
     seq_length: int = 128
     batch_size: int = 16

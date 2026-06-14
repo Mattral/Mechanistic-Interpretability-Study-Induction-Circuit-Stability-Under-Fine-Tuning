@@ -15,14 +15,23 @@ Checkpoints and induction scores saved every 100 steps.
 Three seeds: 42, 123, 7.
 
 \subsection{Induction Score}
-Following \citet{olsson2022context}, for repeated-token sequence
-$[t_1,\ldots,t_n,\,t_1,\ldots,t_n]$:
+Following \citet{olsson2022context} and the prefix-matching score formula
+$\text{PrefixMatching}(l,h) = \frac{1}{s-1}\sum_{i=1}^{s-1} A_{s+i,\,i+1}^{(l,h)}$
+(Nanda \& Bloom, 2022; also used by Heimersheim \& Janiak, 2023), for
+repeated-token sequence $[t_1,\ldots,t_n,\,t_1,\ldots,t_n]$
+(0-indexed positions $0,\ldots,2n-1$):
 \begin{equation}
-  \text{IS}(l,h) = \frac{1}{n}\sum_{i=1}^{n} A^{(l,h)}[n+i,\;i]
+  \text{IS}(l,h) = \frac{1}{n-1}\sum_{j=0}^{n-2} A^{(l,h)}[n+j,\;j+1]
   \label{eq:is}
 \end{equation}
-where $A^{(l,h)}[q,k]$ is the attention weight at query position $q$, key $k$.
-Averaged over $n=500$ sequences with half-length 50.
+where $A^{(l,h)}[q,k]$ is the attention weight at query position $q$, key
+$k$. This measures the average attention from the second occurrence of a
+token back to the position immediately following its first occurrence ---
+the token an induction head must copy to predict correctly --- rather than
+back to the first occurrence of the same token. Averaged over 100 sequences
+with half-length $n=30$ (baseline characterisation) and 500 sequences with
+half-length $n=50$ (per-checkpoint metric during fine-tuning,
+Section~\ref{sec:implementation}).
 Change $\geq 0.1$ is treated as practically meaningful (a priori, not adjusted post-hoc).
 
 \subsection{Activation Patching Protocol}
@@ -59,16 +68,26 @@ $\text{Attr}$ & Activation-patching attribution & $[L, H]$ \\
 \subsection{Implementation Details}
 \label{sec:implementation}
 
-\textbf{BOS token offset (DECISION-005).}
-TransformerLens prepends a beginning-of-sequence (BOS) token by default,
-shifting all attention position indices by $+1$.
-Without correction, the formula IS$(l,h) = \frac{1}{n}\sum_i A^{(l,h)}[n+i, i]$
-reads attention weights at the wrong positions, producing scores near zero
-even for genuine induction heads.
-We pass \texttt{prepend\_bos=False} to every \texttt{run\_with\_cache()} call
-so the attention matrix has dimensions $[\text{batch}, n_\text{heads}, 2n, 2n]$
-with no BOS offset.
-This is consistent with Nanda's original TransformerLens tutorial implementation.
+\textbf{Prefix-matching index off-by-one (DECISION-005, revised).}
+An early implementation read $A^{(l,h)}[n+i, i]$, normalised by $1/n$ ---
+the attention from a token's second occurrence back to \emph{its own} first
+occurrence. This produced near-zero scores for every head, including L1H6
+(score $0.035$), even though an independent activation-patching measurement
+gave L1H6 attribution $0.952$ for the same model. The discrepancy between
+two methods measuring related properties of the same head was the signal
+that the formula, not the model, was the source of the near-zero result.
+The corrected formula, Eq.~\ref{eq:is}, reads $A^{(l,h)}[n+j, j+1]$ ---
+attention back to the token \emph{following} the first occurrence (the
+value an induction head copies) --- normalised by $1/(n-1)$, matching the
+prefix-matching score definition used by \citet{olsson2022context} and
+Nanda \& Bloom (2022). After this correction, L1H6 scores $0.408 \pm 0.103$,
+a $>10\times$ increase, clearly separated from every other head (next
+highest: $0.033$). We initially suspected TransformerLens's default
+BOS-token prepending as the cause and added \texttt{prepend\_bos=False} to
+all \texttt{run\_with\_cache()} calls; this had no measurable effect, since
+test sequences are constructed as integer tensors (TransformerLens only
+applies BOS-prepending to string inputs) --- the flag is retained
+defensively but the index correction above is the actual fix.
 
 \textbf{Tokenizer (DECISION-006).}
 The \texttt{attn-only-2l} model uses the \texttt{NeelNanda/gpt-neox-tokenizer-digits}

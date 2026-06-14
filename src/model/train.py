@@ -150,7 +150,7 @@ def save_checkpoint(
         "config": dataclasses.asdict(config),
         "seed": seed,
         "transformer_lens_version": _get_transformer_lens_version(),
-        "torch_version": torch.__version__,
+        "torch_version": str(torch.__version__),  # cast to str; TorchVersion object not safe in PyTorch>=2.6
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
     }
     torch.save(payload, path)
@@ -178,7 +178,20 @@ def load_checkpoint(
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
-    payload = torch.load(path, map_location="cpu")
+    try:
+        payload = torch.load(path, map_location="cpu", weights_only=True)
+    except Exception as e:
+        # Fallback for checkpoints saved with PyTorch <2.6 that contain
+        # TorchVersion objects or other non-allowlisted globals. Log a
+        # warning but proceed — these checkpoints come from our own
+        # training runs and are trusted.
+        logger.warning(
+            "torch.load(weights_only=True) failed for %s (%s); "
+            "retrying with weights_only=False. Upgrade to v8 codebase "
+            "to generate checkpoints safe for weights_only=True.",
+            path.name, type(e).__name__,
+        )
+        payload = torch.load(path, map_location="cpu", weights_only=False)  # noqa: S614
     model.load_state_dict(payload["model_state_dict"])
     if optimizer is not None:
         optimizer.load_state_dict(payload["optimizer_state_dict"])

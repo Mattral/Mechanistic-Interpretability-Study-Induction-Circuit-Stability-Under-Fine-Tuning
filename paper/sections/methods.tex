@@ -46,9 +46,14 @@ Change $\geq 0.1$ is treated as practically meaningful (a priori, not adjusted p
 Heads with $\text{Attr}(l,h) \geq 0.5$ are in the circuit (stated a priori).
 
 \subsection{Datasets}
-\textbf{Primary:} \texttt{codeparrot/github-code}, Python subset (streamed).\\
-\textbf{Control:} \texttt{roneneldan/TinyStories} (mandatory; without it no domain-shift
-claim is possible).
+\textbf{Primary:} \texttt{transformersbook/codeparrot} (Parquet, streamed;
+22M Python files from GitHub BigQuery) \citep{wolf2020transformers}.
+This dataset was substituted for the originally-specified
+\texttt{codeparrot/github-code} when the HuggingFace \texttt{datasets>=4.0}
+library dropped support for loading-script-based datasets
+(DECISION-013); both derive from the identical GitHub BigQuery source.\\
+\textbf{Control:} \texttt{roneneldan/TinyStories} \citep{eldan2023tinystories}
+(mandatory; without it no domain-shift claim is possible).
 
 \subsection{Metrics at Every Checkpoint}
 \begin{center}

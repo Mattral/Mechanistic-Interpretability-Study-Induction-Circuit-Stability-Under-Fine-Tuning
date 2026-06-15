@@ -2,3 +2,4 @@
 *.pt filter=lfs diff=lfs merge=lfs -text
 # Treat all notebooks as documentation, exclude from language stats
 *.ipynb linguist-documentation
+notebooks/* linguist-documentation

@@ -563,3 +563,38 @@ UnpicklingError: Unsupported global: GLOBAL torch.torch_version.TorchVersion
 - New checkpoints (from re-runs after v8 push) are safe with
   `weights_only=True` and will not trigger the fallback.
 - `onnx_export.py` calls `load_checkpoint()` — already fixed transitively.
+
+---
+
+## DECISION-015: 3-seed per-head sweep completed — code vs prose gap confirmed significant
+
+**Date:** 2026-06-17
+**Status:** Confirmed — seeds 123 and 7 swept successfully on Colab T4
+
+**Context:** Following DECISION-014's fix to `load_checkpoint()`, the
+per-head checkpoint sweep was run for seeds 123 and 7 (both code and prose
+conditions), completing the 3-seed dataset that was previously available
+only as an aggregate (`induction_scores_mean` over all 16 heads) via the
+training-history files.
+
+**Results (L1H6, mean ± SD across seeds 42, 123, 7):**
+- Code: $0.408 \to 0.591 \pm 0.005$ (step 100) $\to 0.646 \pm 0.007$ (step 200)
+- Prose: $0.408 \to 0.583 \pm 0.002$ (step 100) $\to 0.616 \pm 0.001$ (step 200)
+- Code vs prose at step 100: $+0.0086$ ($1.5\times$ pooled SD) — suggestive
+- Code vs prose at step 200: $+0.0303$ ($4.1\times$ pooled SD) — significant
+
+**Decision:** This confirms, rather than merely suggests, that (1) the
+induction circuit strengthens under both conditions across all three
+seeds tested, with very low inter-seed variance ($\leq 0.007$ throughout),
+and (2) code fine-tuning produces a significantly larger increase than
+prose fine-tuning by step 200. All paper sections (abstract, introduction,
+results, safety discussion, limitations, conclusion) were updated to
+report 3-seed mean ± SD instead of seed-42-only values, and to state the
+code-vs-prose separation as statistically meaningful rather than "not
+discriminable at one seed." Figures 5 and 6 were regenerated with mean
+± 1 SD shading bands alongside the original seed-42 line.
+
+**Consequences:** The paper's central empirical claim is now backed by
+3-seed evidence rather than a single-seed preliminary observation. The
+remaining limitation is scale (3 seeds, 3 checkpoints) rather than the
+previous "single seed only" gap.

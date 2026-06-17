@@ -1,18 +1,19 @@
 \section{Limitations}
 \label{sec:limitations}
 
-\textbf{Per-head trajectories: single seed.}
-The per-head L1H6 trajectories (Figures~5--7, the IS values in
-Table~\ref{tab:main-results}) are from seed 42 only. Seeds 123 and 7 were
-trained (checkpoints exist for both conditions) and their \emph{aggregate}
-metrics (mean induction score over all 16 heads, training loss) were
-successfully extracted and are reported in Table~\ref{tab:main-results} as
-3-seed mean $\pm$ SD. However, the per-head checkpoint sweep
-(\texttt{sweep\_checkpoints()}, which yields the full $[\text{step},
-\text{layer}, \text{head}]$ tensor needed for L1H6-specific values) was run
-for seed 42 only. Running this sweep for seeds 123 and 7 is the
-single highest-priority remaining step to obtain per-head confidence
-intervals and statistically confirm the reinforcement direction.
+\textbf{Three seeds, three checkpoints.}
+All per-head L1H6 trajectories (Figures~5--7, Table~\ref{tab:main-results})
+are now confirmed across three seeds (42, 123, 7), each with checkpoints at
+steps 0, 100, and 200. This is a modest number of seeds and checkpoints by
+the standards of larger-scale interpretability work; five or more seeds and
+more frequent checkpointing would tighten the confidence intervals further
+and allow genuine Savitzky-Golay smoothing (currently window $=5$ exceeds
+the 3-checkpoint series length and falls back to raw differences). The
+qualitative finding --- both conditions increase L1H6's score, code more
+than prose by step 200 --- is unlikely to be a seed artefact given the
+small inter-seed SDs reported ($\leq 0.007$ throughout), but a larger seed
+count would still be standard practice before treating the code-vs-prose
+gap as fully established.
 
 \textbf{Three checkpoints per run.}
 With \texttt{checkpoint\_every=100} and 244 total steps, each run produces

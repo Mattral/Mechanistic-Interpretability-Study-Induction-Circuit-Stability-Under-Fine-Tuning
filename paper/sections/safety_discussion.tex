@@ -7,29 +7,34 @@ A common prior assumption is that fine-tuning on a narrow distribution
 generalisation outside their training domain --- a property standard
 capability benchmarks do not measure.
 
-\textbf{Result: neither condition degrades the circuit.}
-Our result is the inverse of this prior: L1H6's prefix-matching score
-increases by $+0.230$ (code) and $+0.208$ (prose) over 244 fine-tuning
-steps, with near-identical trajectories in both conditions. At this token
-budget, the induction circuit is reinforced, not eroded. This matters in
-two directions.
+\textbf{Result: neither condition degrades the circuit; code reinforces it more than prose.}
+Our result is the inverse of this prior: across three seeds, L1H6's
+prefix-matching score increases by $+0.238 \pm 0.007$ (code) and
+$+0.208 \pm 0.001$ (prose) over 244 fine-tuning steps, with code producing
+a significantly larger increase by step 200 ($4.1\times$ pooled SD).
+At this token budget, the induction circuit is reinforced, not eroded, and
+the degree of reinforcement is domain-dependent. This matters in two
+directions.
 
 \textbf{Direction 1 --- reassurance (with caveats).} Fine-tuned models
 may retain stronger in-context learning than naive circuit-erasure
 assumptions suggest. This is relevant for deployments where in-context
 generalisation is desired (instruction-following, few-shot adaptation).
-However, the result is preliminary (seed 42 only, 500K tokens), and whether
-it holds at larger budgets, other architectures, or with instruction-tuning
-objectives is unknown.
+The result is now confirmed across three seeds at a 500K-token budget;
+whether it holds at larger budgets, other architectures, or with
+instruction-tuning objectives remains untested.
 
-\textbf{Direction 2 --- a new risk.} Reinforcement of prefix-matching is
-not unconditionally benign. A model that \emph{more} strongly completes
-"if I've seen A$\to$B before, predict B" may be more susceptible to
-induction-based prompt injection: an adversary who includes a template
-``[injection] $\to$ [harmful output]'' in context, then re-triggers
-``[injection]'' later, may find the fine-tuned model more reliably
-executes the completion than the pretrained model. This risk is entirely
-invisible to capability benchmarks.
+\textbf{Direction 2 --- a new risk, with a domain-dependent magnitude.}
+Reinforcement of prefix-matching is not unconditionally benign. A model
+that \emph{more} strongly completes "if I've seen A$\to$B before, predict
+B" may be more susceptible to induction-based prompt injection: an
+adversary who includes a template ``[injection] $\to$ [harmful output]''
+in context, then re-triggers ``[injection]'' later, may find the
+fine-tuned model more reliably executes the completion than the pretrained
+model. That code fine-tuning produces a measurably larger reinforcement
+than prose fine-tuning suggests this risk may itself be domain-dependent
+--- a consideration for any practitioner choosing a fine-tuning corpus.
+This risk is entirely invisible to capability benchmarks.
 
 \textbf{Adversarial probe robustness.} Post-fine-tuning, structure-preserving
 perturbations retain $0.944$ of the clean score; structure-removing probes

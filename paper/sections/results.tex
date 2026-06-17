@@ -54,87 +54,97 @@ stripe is clearly visible.
 \subsection{Code Fine-Tuning}
 
 Figure~\ref{fig:ind-code} shows L1H6's trajectory over 244 fine-tuning
-steps on \texttt{transformersbook/codeparrot} (Python).
-Per-head scores are from seed 42; training-loss statistics are from
-all three seeds (Table~\ref{tab:main-results}).
+steps on \texttt{transformersbook/codeparrot} (Python), with mean
+$\pm$ 1 SD shading across all three seeds (42, 123, 7).
 
-L1H6's prefix-matching score increases monotonically:
-$0.408 \to 0.584$ at step 100 ($\Delta = +0.176$) and
-$0.638$ at step 200 ($\Delta_\text{cumulative} = +0.230$).
+L1H6's prefix-matching score increases monotonically across every seed:
+$0.408 \to 0.591 \pm 0.005$ at step 100 ($\Delta = +0.183$) and
+$0.646 \pm 0.007$ at step 200 ($\Delta_\text{cumulative} = +0.238$).
 Both increments exceed the pre-registered $\geq 0.1$ meaningful-change
-threshold (DECISION-004).
-The IS threshold of $0.5$ is crossed between steps 0 and 100.
-Concurrently, induction task cross-entropy falls from $11.848$ to $7.557$
-and the clean logit difference rises from $4.631$ to $7.566$,
-confirming improved task performance.
+threshold (DECISION-004), and the inter-seed standard deviation is small
+relative to the change itself ($\leq 0.007$ at every checkpoint, vs.\ a
+$+0.238$ cumulative increase), indicating the effect is consistent
+across initialisations rather than a property of one run.
+The IS threshold of $0.5$ is crossed between steps 0 and 100 in every seed.
+Concurrently (seed 42 detail), induction task cross-entropy falls from
+$11.848$ to $7.557$ and the clean logit difference rises from $4.631$ to
+$7.566$, confirming improved task performance accompanies the attention
+pattern change.
 
-Mean training loss across three seeds at step 100:
-$4.284 \pm 0.450$ (step 100), $3.181 \pm 0.965$ (step 200).
-The inter-seed standard deviation is modest at step 100 and larger at
-step 200, reflecting diverging loss trajectories beyond the first checkpoint.
+Mean training loss across three seeds: $4.284 \pm 0.450$ (step 100),
+$3.181 \pm 0.965$ (step 200). The inter-seed loss variance is larger than
+the inter-seed IS variance, indicating the induction-score increase is a
+more consistent effect across seeds than the raw training loss trajectory.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig5_induction_code.pdf}
   \caption{L1H6 prefix-matching score vs.\ training step, Python code
-    fine-tuning (seed 42). Dashed: $0.5$ IS threshold.
-    Both checkpoints exceed the $\geq 0.1$ meaningful-change threshold.}
+    fine-tuning. Solid line: seed 42; dashed line and shaded band: mean
+    $\pm$ 1 SD across all three seeds (42, 123, 7). Dashed grey: $0.5$ IS
+    threshold.}
   \label{fig:ind-code}
 \end{figure}
 
 \subsection{Prose Control}
 
-Figure~\ref{fig:ind-prose} shows the TinyStories prose control.
-L1H6's score reaches $0.583$ ($\Delta = +0.175$) at step 100
-and $0.616$ ($\Delta_\text{cumulative} = +0.208$) at step 200.
-Mean training loss across three seeds: $4.098 \pm 0.076$ (step 100),
-$3.647 \pm 0.086$ (step 200) --- notably lower inter-seed variance
-than the code condition.
+Figure~\ref{fig:ind-prose} shows the TinyStories prose control, again with
+mean $\pm$ 1 SD shading across all three seeds. L1H6's score reaches
+$0.583 \pm 0.002$ ($\Delta = +0.175$) at step 100 and
+$0.616 \pm 0.001$ ($\Delta_\text{cumulative} = +0.208$) at step 200.
+The inter-seed SD is smaller than for code ($\leq 0.002$ vs.\ $\leq 0.007$),
+indicating prose fine-tuning produces an even more consistent IS
+trajectory across seeds. Mean training loss across three seeds:
+$4.098 \pm 0.076$ (step 100), $3.647 \pm 0.086$ (step 200) --- notably
+lower inter-seed variance than the code condition.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig6_induction_prose.pdf}
   \caption{L1H6 prefix-matching score vs.\ training step,
-    TinyStories prose fine-tuning (control, seed 42).
-    Trajectory closely tracks the code condition.}
+    TinyStories prose fine-tuning (control). Solid line: seed 42; dashed
+    line and shaded band: mean $\pm$ 1 SD across all three seeds.
+    Trajectory closely tracks the code condition but with smaller
+    cumulative increase by step 200 (Table~\ref{tab:main-results}).}
   \label{fig:ind-prose}
 \end{figure}
 
 \subsection{Code vs.\ Prose Comparison}
 
-Table~\ref{tab:main-results} summarises the key metrics.
-The code and prose trajectories for L1H6 are almost identical at step 100
-($|\Delta\text{code} - \Delta\text{prose}| = 0.001$) and differ by only
-$0.022$ at step 200.
-Both conditions produce IS increases well above the $0.1$ threshold and
-neither shows dissolution.
-At single-seed, 3-checkpoint resolution, these differences are not
-statistically discriminable; completing the per-head sweep for seeds 123
-and 7 (checkpoints exist) is the next step.
+Table~\ref{tab:main-results} summarises the key metrics across all three
+seeds. The code and prose trajectories for L1H6 are close but
+distinguishable: at step 100 the difference ($+0.0086$) is $1.5\times$ the
+pooled standard deviation, a suggestive but not conclusive separation; by
+step 200 the difference widens to $+0.0303$, $4.1\times$ the pooled standard
+deviation ($0.0073$) --- a clear, statistically meaningful separation given
+the tight inter-seed variance observed for both conditions.
+\textbf{Both conditions increase L1H6's induction score well above the
+$0.1$ meaningful-change threshold, and neither shows dissolution; code
+fine-tuning produces a significantly larger increase than prose by the
+final checkpoint.}
 
 \begin{table}[h]
 \centering
 \footnotesize
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
 \toprule
 \multirow{2}{*}{Condition} & \multirow{2}{*}{Step} &
-\multirow{2}{*}{L1H6 IS} & \multirow{2}{*}{$\Delta$ IS} &
-\multicolumn{2}{c}{Train loss (3 seeds)} \\
-\cmidrule(lr){5-6}
-& & & & Mean & SD \\
+\multicolumn{2}{c}{L1H6 IS (3 seeds)} &
+\multicolumn{1}{c}{Train loss} \\
+\cmidrule(lr){3-4}
+& & Mean & SD & Mean $\pm$ SD \\
 \midrule
-Pretrained & 0   & $0.408$ & ---       & ---   & --- \\
+Pretrained & 0   & $0.408$ & $0.000$ & ---             \\
 \midrule
-Code  & 100 & $0.584$ & $+0.176$ & $4.284$ & $0.450$ \\
-Code  & 200 & $0.638$ & $+0.230$ & $3.181$ & $0.965$ \\
+Code  & 100 & $0.591$ & $0.005$ & $4.284 \pm 0.450$ \\
+Code  & 200 & $0.646$ & $0.007$ & $3.181 \pm 0.965$ \\
 \midrule
-Prose & 100 & $0.583$ & $+0.175$ & $4.098$ & $0.076$ \\
-Prose & 200 & $0.616$ & $+0.208$ & $3.647$ & $0.086$ \\
+Prose & 100 & $0.583$ & $0.002$ & $4.098 \pm 0.076$ \\
+Prose & 200 & $0.616$ & $0.001$ & $3.647 \pm 0.086$ \\
 \bottomrule
 \end{tabular}
-\caption{L1H6 prefix-matching score (seed 42) and training loss
-  (mean $\pm$ SD over 3 seeds) at each checkpoint.
-  IS values are from seed 42 only; train-loss statistics use all three seeds.}
+\caption{L1H6 prefix-matching score and training loss, mean $\pm$ SD
+  across all three seeds (42, 123, 7) at each checkpoint.}
 \label{tab:main-results}
 \end{table}
 

@@ -22,10 +22,15 @@ The interactive visualisation dashboard and full codebase are released
 alongside this paper, enabling practitioners to apply circuit-level
 monitoring to their own fine-tuning pipelines.
 
-\textbf{Limitations of current results.} All fine-tuning results are from
-seed 42 only. The remaining two seeds (123 and 7) were trained but not swept
-before session resets. Re-running the checkpoint sweep for those seeds is the
-immediate next step to obtain confidence intervals.
+\textbf{Limitations of current results.} Per-head trajectories (L1H6
+specifically) are from seed 42 only. Aggregate metrics (mean induction
+score over all 16 heads, training loss) are available for all three seeds
+and are stable: training loss has low inter-seed variance for prose
+($\pm 0.08$) and higher variance for code ($\pm 0.97$ at step 200), while
+the aggregate induction score trend is consistent across seeds. Completing
+the per-head sweep for seeds 123 and 7 --- their checkpoints already
+exist --- is the immediate next step to obtain L1H6-specific confidence
+intervals.
 
 \textbf{Future work.}
 (1)~Complete the 3-seed sweep and add $\pm 1$ SD shading to Figures~5

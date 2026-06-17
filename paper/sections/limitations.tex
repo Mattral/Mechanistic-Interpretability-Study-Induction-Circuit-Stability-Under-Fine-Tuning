@@ -1,13 +1,18 @@
 \section{Limitations}
 \label{sec:limitations}
 
-\textbf{Single seed analysed (fine-tuning).}
-All fine-tuning trajectories (Figures~5--7, Tables~1--3) are from seed 42
-only. Seeds 123 and 7 were trained and checkpoints exist, but the checkpoint
-sweep could not be completed before Colab session resets. No $\pm 1$~SD
-confidence intervals are available for the IS trajectories; the $\Delta$ and
-IS values in Tables~1--3 should be treated as single-seed observations
-pending confirmation.
+\textbf{Per-head trajectories: single seed.}
+The per-head L1H6 trajectories (Figures~5--7, the IS values in
+Table~\ref{tab:main-results}) are from seed 42 only. Seeds 123 and 7 were
+trained (checkpoints exist for both conditions) and their \emph{aggregate}
+metrics (mean induction score over all 16 heads, training loss) were
+successfully extracted and are reported in Table~\ref{tab:main-results} as
+3-seed mean $\pm$ SD. However, the per-head checkpoint sweep
+(\texttt{sweep\_checkpoints()}, which yields the full $[\text{step},
+\text{layer}, \text{head}]$ tensor needed for L1H6-specific values) was run
+for seed 42 only. Running this sweep for seeds 123 and 7 is the
+single highest-priority remaining step to obtain per-head confidence
+intervals and statistically confirm the reinforcement direction.
 
 \textbf{Three checkpoints per run.}
 With \texttt{checkpoint\_every=100} and 244 total steps, each run produces

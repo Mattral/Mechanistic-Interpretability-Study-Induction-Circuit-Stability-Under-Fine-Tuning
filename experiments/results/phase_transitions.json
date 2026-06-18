@@ -1,0 +1,24 @@
+{
+  "code": [
+    {
+      "layer": 1,
+      "head": 6,
+      "step": 100,
+      "step_fraction": 0.5,
+      "score_before": 0.4082734286785126,
+      "score_after": 0.5840330719947815,
+      "delta": 0.17575964331626892
+    }
+  ],
+  "prose": [
+    {
+      "layer": 1,
+      "head": 6,
+      "step": 100,
+      "step_fraction": 0.5,
+      "score_before": 0.4082734286785126,
+      "score_after": 0.5833303928375244,
+      "delta": 0.17505696415901184
+    }
+  ]
+}

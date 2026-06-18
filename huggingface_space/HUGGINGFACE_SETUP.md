@@ -75,7 +75,7 @@ Run the export from the GitHub repository root (requires completed checkpoints):
 # In the GitHub repo directory (not the Space repo):
 python src/viz/dashboard/onnx_export.py \
     --pre  checkpoints/code_seed42/step_000000.pt \
-    --post checkpoints/code_seed42/step_$(ls checkpoints/code_seed42/ | tail -1 | grep -o '[0-9]*') .pt \
+    --post checkpoints/code_seed42/step_000200.pt \
     --output /tmp/onnx_models/ \
     --seq-len 64
 ```

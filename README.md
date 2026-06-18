@@ -1,9 +1,8 @@
 # Mechanistic Interpretability Study: Induction Circuit Stability Under Fine-Tuning
 
-[![CI](https://github.com/Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning/actions/workflows/ci.yml/badge.svg)](https://github.com/Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning/actions)
+
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/Mattral/induction-circuit-stability)
 [![Paper](https://img.shields.io/badge/paper-ArXiv%20pending-b31b1b.svg)](https://arxiv.org/abs/TBD)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A mechanistic interpretability study asking a simple question: does the
 induction head circuit in a 2-layer attention-only transformer survive

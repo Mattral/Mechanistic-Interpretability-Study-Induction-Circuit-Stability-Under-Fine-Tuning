@@ -211,6 +211,7 @@ pytest tests/ -v
 | `test_patching.py` | Counterfactual prompt generation, activation tracking, clean vs corrupted logit states |
 | `test_reproducibility.py` | Global seed determinism, model check-pointing round-trips, identical training loss profiles |
 | `test_phase_detection.py` | Savitzky-Golay filtering stability and mathematical edge cases in transition alarms |
+| `test_adversarial.py` | Suite size, shapes, structure, reproducibility |
 
 ---
 

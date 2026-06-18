@@ -32,14 +32,17 @@ degrades or reorganises, at what training step does the transition occur?
   \item We fine-tune on 500K tokens of Python code (primary) and TinyStories
     prose (mandatory control), saving checkpoints every 100 steps and computing
     all eight circuit metrics from Section~\ref{sec:methods} at each checkpoint.
-  \item \textbf{Finding (seed 42; 3 checkpoints, seeds 123/7 pending).}
+  \item \textbf{Finding (3 seeds, 3 checkpoints).}
     We find that L1H6's prefix-matching score \emph{increases} under both
-    fine-tuning conditions: $0.408 \to 0.584 \to 0.638$ (code) and
-    $0.408 \to 0.583 \to 0.616$ (prose) over steps $0/100/200$, with
-    near-identical trajectories across domains---a result not reported in any
+    fine-tuning conditions: $0.408 \to 0.591 \pm 0.005 \to 0.646 \pm 0.007$
+    (code) and $0.408 \to 0.583 \pm 0.002 \to 0.616 \pm 0.001$ (prose)
+    over steps $0/100/200$ (mean $\pm$ SD across seeds 42, 123, 7), with code
+    producing a significantly larger increase by step 200
+    ($+0.030$, $4.1\times$ pooled SD)---a result not reported in any
     prior work---implying that the induction circuit is not silently eroded
-    by fine-tuning at this token budget, and that safety evaluations should
-    include circuit-level diagnostics to detect both degradation \emph{and}
+    by fine-tuning at this token budget, that the magnitude of reinforcement
+    is domain-dependent, and that safety evaluations should include
+    circuit-level diagnostics to detect both degradation \emph{and}
     unexpected reinforcement of in-context learning mechanisms.
   \item We release a fully reproducible codebase with interactive dashboard
     (Hugging Face Spaces) and all experiment configs.

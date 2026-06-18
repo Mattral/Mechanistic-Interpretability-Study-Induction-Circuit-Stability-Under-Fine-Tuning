@@ -36,7 +36,10 @@ This dashboard lets you inspect:
 - **Circuit diagram** — which heads are causally verified circuit members.
 
 Toggle between **Pre-fine-tuning** and **Post-fine-tuning** states to see how the
-circuit changes after training on Python code.
+circuit changes after training on Python code. Spoiler: it doesn't dissolve —
+the induction head's prefix-matching score increases from 0.408 to 0.646 ± 0.007
+after 244 fine-tuning steps (mean ± SD across 3 seeds). Try the toggle yourself
+to see the attention pattern sharpen.
 
 ## Load time
 
@@ -47,4 +50,4 @@ Inference per input: **< 500 ms**.
 ## Links
 
 - GitHub: [Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning](https://github.com/Mattral/Mechanistic-Interpretability-Study-Induction-Circuit-Stability-Under-Fine-Tuning)
-- Paper: [ArXiv link TBD]
+- Paper: ArXiv submission in progress — see the GitHub repo for the latest compiled PDF (`paper/main.pdf`)

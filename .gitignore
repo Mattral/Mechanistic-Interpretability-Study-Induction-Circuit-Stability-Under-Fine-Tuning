@@ -18,15 +18,14 @@ venv/
 .ipynb_checkpoints/
 
 # Large binary outputs
+# NOTE: paper/figures/ is intentionally tracked (contains publication figures)
 # NOTE: These directories are excluded from git. To regenerate:
-#   Phase 1-4 results:  Run notebooks 01-04 in order (see README.md).
+#   Phase 1-4 results:  Already committed in experiments/results/ (see README.md).
 #   Checkpoints:        Run notebooks/03_finetuning.ipynb (requires GPU, ~80 min/run).
 #   Paper figures:      Run notebooks/05_figures.ipynb after 01-04 complete.
 #   ONNX models:        Run src/viz/dashboard/onnx_export.py after checkpoints exist.
 #   DVC (future):       `dvc pull` will fetch all outputs once DVC remote is configured.
 checkpoints/
-#experiments/results/
-#paper/figures/
 src/viz/dashboard/onnx_models/
 
 # DVC (data version control)

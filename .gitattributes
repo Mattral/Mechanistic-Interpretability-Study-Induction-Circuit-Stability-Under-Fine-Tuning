@@ -1,2 +1,2 @@
-*.onnx filter=lfs diff=lfs merge=lfs -text
-*.pt filter=lfs diff=lfs merge=lfs -text
+# Treat all notebooks as documentation, exclude from language stats
+*.ipynb linguist-documentation

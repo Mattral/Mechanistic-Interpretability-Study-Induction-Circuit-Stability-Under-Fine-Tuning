@@ -1,8 +1,11 @@
+<div align="center">
+
 # Mechanistic Interpretability Study: Induction Circuit Stability Under Fine-Tuning
 
-
+[![Preprint](https://img.shields.io/badge/Preprint-ResearchSquare-3b82f6?style=for-the-badge)](https://www.researchsquare.com/article/rs-10067094/v1)
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md.svg)](https://huggingface.co/spaces/Mattral/induction-circuit-stability)
-[![Paper](https://img.shields.io/badge/paper-ArXiv%20pending-b31b1b.svg)](https://arxiv.org/abs/TBD)
+
+</div>
 
 A mechanistic interpretability study asking a simple question: does the
 induction head circuit in a 2-layer attention-only transformer survive
@@ -25,6 +28,20 @@ code than under prose. Full numbers in [Results](#results-summary) below.
     — toggle pre/post fine-tuning and inspect the attention pattern on your own input text.
   </p>
 </div>
+
+---
+## Overview
+
+This repository contains a mechanistic interpretability study examining the stability of **induction heads** and related circuits in a small (2-layer attention-only) Transformer during domain adaptation.
+
+We fine-tune the model from prose to structured Python code and track circuit behavior across training using:
+- Induction scores
+- Activation patching for causal attribution
+- Multi-seed experiments with checkpoint analysis
+
+The goal is to understand whether induction circuits persist, adapt, or undergo phase changes when the model shifts domains.
+
+**Note**: This study is conducted on a minimal 2-layer attention-only model. Findings may not directly generalize to larger MLPs or frontier-scale Transformers.
 
 ---
 
@@ -376,3 +393,13 @@ deps: update gradio to 4.37.2
 - No broken imports, no half-finished refactors in `src/`.
 - Scratch work goes in `notebooks/`, never in `src/`.
 - No direct commits to `main`. All changes via branch + self-review.
+
+---
+
+## Publication
+
+**Preprint**  
+Myet. Min Htet (2026). *Induction Circuit Stability Under Fine-Tuning: A Mechanistic Interpretability Study*.  
+ResearchSquare. https://www.researchsquare.com/article/rs-10067094/v1
+
+
